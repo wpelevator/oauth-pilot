@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.2.1 (2026-09-04)
+
+- Fixed the distribution build to include OAuth Pilot's Composer autoloader, preventing activation failures in standalone plugin installs.
+
 ## 0.2.0 (2026-09-04)
 
 - Initial release: OAuth 2.1 authorization server with authorization code + PKCE S256, refresh token rotation, Dynamic Client Registration, token revocation, RFC 8414 and RFC 9728 discovery metadata, and a bearer token validation API for MCP servers and other protected resources.

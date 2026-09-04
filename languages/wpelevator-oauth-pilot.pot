@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the OAuth Pilot plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: OAuth Pilot 0.2.0\n"
+"Project-Id-Version: OAuth Pilot 0.2.1\n"
 "Report-Msgid-Bugs-To: https://github.com/wpelevator/basement\n"
 "Last-Translator: support@wpelevator.com\n"
 "Language-Team: support@wpelevator.com\n"
