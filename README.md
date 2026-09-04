@@ -72,9 +72,11 @@ The four protocol routes are dispatched anonymously. WordPress cookie authentica
 
 **With a pre-registered client.** Under **Settings → OAuth Pilot → Clients**, add a client with the exact callback URL the connector documents. Choose *Confidential* if the connector asks for a client secret; the secret is shown once and only its SHA-256 hash is stored. Choose the authentication method the connector uses — some send credentials in the `Authorization` header (`client_secret_basic`), others in the request body (`client_secret_post`).
 
-Either way the user approving the connection needs the capability behind each requested scope, and every request the client later makes still goes through normal WordPress capability checks.
+Either way a scope is only ever granted by someone who holds the capability behind it, and every request the client later makes still goes through normal WordPress capability checks.
 
-A scope request is narrowed the same way, because one client sends one scope string to every server it talks to. Scopes this server never registered — `offline_access`, the OpenID Connect set — and scopes belonging to a different resource than the one being requested are ignored, as RFC 6749 permits, leaving the scopes that can actually be granted. The granted set is what the consent screen shows and what the token response reports, so a client is always told what it received. Only a request where nothing at all can be granted is refused, with `invalid_scope` naming the scopes the resource does support.
+A scope request is narrowed rather than refused, because one client sends one scope string to every server it talks to. Scopes this server never registered — `offline_access`, the OpenID Connect set — and scopes belonging to a different resource than the one being requested are ignored, as RFC 6749 permits, leaving the scopes that can actually be granted. Only a request where nothing at all can be granted is refused, with `invalid_scope` naming the scopes the resource does support.
+
+The person approving is narrowed the same way, and for the same reason. An MCP client following the specification's scope selection strategy asks for every scope the resource advertises, so the request routinely exceeds what the user signing in holds capabilities for. Scopes that user cannot grant are dropped at the consent screen instead of failing the connection: an editor approving a request for read and write gets both, a subscriber approving the very same request gets the read scope alone, and only a user who can grant nothing is turned away. The granted set is what the consent screen lists, what the code carries and what the token response reports, so a client is always told what it received.
 
 ## Client ID Metadata Documents
 
@@ -249,7 +251,7 @@ The filters below take precedence over the stored values, so infrastructure can 
 | `oauth_pilot__mcp_adapter_routes` | Adjust the MCP Adapter route-to-resource map discovered by the optional integration. |
 | `oauth_pilot__register_scopes` | Register scope definitions. |
 | `oauth_pilot__scopes` | Filter the final scope definitions. |
-| `oauth_pilot__user_can_grant_scope` | Contextual policy after a scope's own callback. |
+| `oauth_pilot__user_can_grant_scope` | Contextual policy after a scope's own callback. Returning false drops that one scope from the grant rather than failing the request. |
 | `oauth_pilot__scope_implies` | Customize scope implication checks. |
 | `oauth_pilot__consent_required` | Force renewed consent, or disable remembered consent. |
 | `oauth_pilot__redirect_uri_allowed` | Approve a private-use scheme callback. Denied by default. |

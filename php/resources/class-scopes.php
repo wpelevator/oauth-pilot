@@ -258,11 +258,31 @@ class Scopes {
 	}
 
 	/**
-	 * Whether the authorizing user may grant every requested scope.
+	 * Narrow a requested scope set to the scopes this user may actually grant.
+	 *
+	 * The same reading of RFC 6749 that resolve_requested() applies to the
+	 * client applies to the user: the server may grant a subset and report what
+	 * it granted. One client sends one scope string to every server, and a
+	 * client that follows the MCP scope selection strategy asks for everything
+	 * the resource advertises, so the requested set routinely exceeds what the
+	 * person approving it holds capabilities for. Refusing the whole request
+	 * over that denies an author every scope they could have had, and locks a
+	 * subscriber out of a read-only connection because the same set also asked
+	 * for write.
+	 *
+	 * Filtering happens after expansion, so an implied scope is dropped on its
+	 * own merits and a user never receives one this returns.
+	 *
+	 * @param string[] $names The requested scopes, already expanded.
+	 *
+	 * @return string[] The subset this user may grant, in the requested order.
 	 */
-	public function user_can_grant( int $user_id, array $names, Protected_Resource $protected_resource, Client $client ): bool {
+	public function filter_grantable_by_user( int $user_id, array $names, Protected_Resource $protected_resource, Client $client ): array {
+		$granted = [];
+
 		foreach ( $names as $name ) {
-			$scope = $this->get( (string) $name );
+			$name = (string) $name;
+			$scope = $this->get( $name );
 
 			$can_grant = $scope ? $scope->user_can_grant( $user_id ) : false;
 
@@ -277,11 +297,20 @@ class Scopes {
 			 */
 			$can_grant = (bool) apply_filters( 'oauth_pilot__user_can_grant_scope', $can_grant, $name, $user_id, $protected_resource, $client );
 
-			if ( ! $can_grant ) {
-				return false;
+			if ( $can_grant ) {
+				$granted[] = $name;
 			}
 		}
 
-		return true;
+		return array_values( array_unique( $granted ) );
+	}
+
+	/**
+	 * Whether the authorizing user may grant every requested scope.
+	 */
+	public function user_can_grant( int $user_id, array $names, Protected_Resource $protected_resource, Client $client ): bool {
+		$names = array_values( array_unique( array_map( 'strval', $names ) ) );
+
+		return count( $this->filter_grantable_by_user( $user_id, $names, $protected_resource, $client ) ) === count( $names );
 	}
 }

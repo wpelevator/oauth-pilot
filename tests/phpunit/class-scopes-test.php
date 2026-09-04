@@ -222,4 +222,81 @@ class Scopes_Test extends \WP_UnitTestCase {
 			'A scope must never let a user delegate a capability they do not have.'
 		);
 	}
+
+	public function test_a_request_is_narrowed_to_the_scopes_the_user_may_grant() {
+		$scopes = $this->get_capability_registry();
+
+		$editor = self::factory()->user->create( [ 'role' => 'editor' ] );
+		$subscriber = self::factory()->user->create( [ 'role' => 'subscriber' ] );
+		$requested = [ 'mcp:read', 'mcp:tools' ];
+
+		$this->assertSame(
+			[ 'mcp:read', 'mcp:tools' ],
+			$scopes->filter_grantable_by_user( $editor, $requested, $this->get_resource(), $this->get_client() ),
+			'A user holding every underlying capability grants the whole request.'
+		);
+
+		$this->assertSame(
+			[ 'mcp:read' ],
+			$scopes->filter_grantable_by_user( $subscriber, $requested, $this->get_resource(), $this->get_client() ),
+			'A client asking for every advertised scope must still connect a user who can only grant some of them, with the rest dropped.'
+		);
+	}
+
+	public function test_narrowing_drops_an_unregistered_scope_and_reports_nothing_grantable() {
+		$scopes = $this->get_capability_registry();
+		$subscriber = self::factory()->user->create( [ 'role' => 'subscriber' ] );
+
+		$this->assertSame(
+			[],
+			$scopes->filter_grantable_by_user( $subscriber, [ 'mcp:tools', 'never:registered' ], $this->get_resource(), $this->get_client() ),
+			'An empty result is what tells the consent screen that nothing at all can be granted.'
+		);
+	}
+
+	public function test_narrowing_applies_the_contextual_policy_filter() {
+		$scopes = $this->get_capability_registry();
+		$editor = self::factory()->user->create( [ 'role' => 'editor' ] );
+
+		add_filter(
+			'oauth_pilot__user_can_grant_scope',
+			fn ( bool $can_grant, string $name ): bool => 'mcp:tools' === $name ? false : $can_grant,
+			10,
+			2
+		);
+
+		$this->assertSame(
+			[ 'mcp:read' ],
+			$scopes->filter_grantable_by_user( $editor, [ 'mcp:read', 'mcp:tools' ], $this->get_resource(), $this->get_client() ),
+			'Site policy narrows a request the same way a missing capability does.'
+		);
+	}
+
+	/**
+	 * A registry whose scopes are gated on real WordPress capabilities.
+	 */
+	private function get_capability_registry(): Scopes {
+		$scopes = new Scopes();
+
+		add_action(
+			'oauth_pilot__register_scopes',
+			function ( Scopes $registry ) {
+				$registry->register(
+					[
+						'name' => 'mcp:read',
+						'user_can_grant' => fn ( int $user_id ): bool => user_can( $user_id, 'read' ),
+					]
+				);
+				$registry->register(
+					[
+						'name' => 'mcp:tools',
+						'user_can_grant' => fn ( int $user_id ): bool => user_can( $user_id, 'edit_posts' ),
+					]
+				);
+			},
+			20
+		);
+
+		return $scopes;
+	}
 }

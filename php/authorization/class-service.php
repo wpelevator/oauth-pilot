@@ -217,8 +217,13 @@ class Service {
 	 * @return string|null The redirect URL, or null when the row was no longer
 	 *                     claimable.
 	 */
-	public function approve( Authorization $authorization, int $user_id ): ?string {
-		$code = $this->authorizations->approve( $authorization, $user_id, $authorization->get_scopes() );
+	/**
+	 * @param string[]|null $scopes The scopes actually granted, when they are
+	 *                              narrower than the ones requested. Defaults to
+	 *                              the requested set.
+	 */
+	public function approve( Authorization $authorization, int $user_id, ?array $scopes = null ): ?string {
+		$code = $this->authorizations->approve( $authorization, $user_id, $scopes ?? $authorization->get_scopes() );
 
 		if ( ! isset( $code ) ) {
 			return null;
@@ -288,12 +293,16 @@ class Service {
 	 * Whether this user already granted the same client the same scopes for
 	 * the same resource, which is what remembered consent is derived from.
 	 */
-	public function has_remembered_consent( Authorization $authorization, int $user_id ): bool {
+	/**
+	 * @param string[]|null $scopes The scopes that would be granted now, when
+	 *                              they are narrower than the ones requested.
+	 */
+	public function has_remembered_consent( Authorization $authorization, int $user_id, ?array $scopes = null ): bool {
 		$remembered = $this->tokens->has_active_grant(
 			$user_id,
 			$authorization->get_client_id(),
 			$authorization->get_resource(),
-			$authorization->get_scopes()
+			$scopes ?? $authorization->get_scopes()
 		);
 
 		/**

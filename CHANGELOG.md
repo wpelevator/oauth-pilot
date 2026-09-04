@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.5.0 (2026-09-05)
+
+- Fixed the consent screen refusing an entire authorization request when the approving user could not grant every scope in it, which locked lower-privileged users out of connections they could have made. An MCP client following the specification's scope selection strategy requests every scope the resource advertises, so a site offering both a read and a write scope turned away everyone without the write capability, dead-ending on "Your account is not allowed to grant the requested permissions" instead of connecting them read-only. Scopes the user cannot grant are now dropped at consent, as RFC 6749 permits for the request as a whole, and only a user who can grant nothing at all is refused. The narrowed set is what the screen lists, what the authorization code carries and what the token response reports.
+- `oauth_pilot__user_can_grant_scope` returning false now drops that one scope from the grant instead of failing the whole request. A policy that must refuse the connection outright can deny every scope.
+
 ## 0.4.0 (2026-09-04)
 
 - Fixed REST API authentication answering for routes that register their own protected resource, which rejected a valid token as issued for a different resource before the route ever ran. An MCP server nested under `wp-json` with its own scopes was unreachable with the very token OAuth Pilot had just minted for it, so a client completed consent and then failed on its first authenticated call. Authentication now resolves the deepest registered audience for the request URL and stands aside when that audience is not the shared REST one, leaving the route to authenticate its own tokens.

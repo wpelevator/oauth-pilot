@@ -103,22 +103,31 @@ class Consent {
 			$this->render_error( __( 'The application that started this request is no longer available.', 'wpelevator-oauth-pilot' ) );
 		}
 
-		if ( ! $this->scopes->user_can_grant( $user_id, $authorization->get_scopes(), $resource, $client ) ) {
-			$this->render_error( __( 'Your account is not allowed to grant the requested permissions.', 'wpelevator-oauth-pilot' ) );
+		/*
+		 * What this user can actually grant, which is not always what the client
+		 * asked for. The screen, the code and the token all report this set.
+		 */
+		$granted = $this->scopes->filter_grantable_by_user( $user_id, $authorization->get_scopes(), $resource, $client );
+
+		if ( empty( $granted ) ) {
+			$this->render_error( __( 'Your account is not allowed to grant any of the requested permissions.', 'wpelevator-oauth-pilot' ) );
 		}
 
 		if ( $this->is_post_request() ) {
-			$this->handle_decision( $authorization, $user_id, $request_id );
+			$this->handle_decision( $authorization, $user_id, $request_id, $granted );
 		}
 
-		if ( $this->authorization_service->has_remembered_consent( $authorization, $user_id ) ) {
-			$this->complete_approval( $authorization, $user_id );
+		if ( $this->authorization_service->has_remembered_consent( $authorization, $user_id, $granted ) ) {
+			$this->complete_approval( $authorization, $user_id, $granted );
 		}
 
-		$this->render_consent_form( $authorization, $client, $resource, $request_id );
+		$this->render_consent_form( $authorization, $client, $resource, $request_id, $granted );
 	}
 
-	private function handle_decision( Authorization $authorization, int $user_id, string $request_id ): void {
+	/**
+	 * @param string[] $granted The scopes this user may grant.
+	 */
+	private function handle_decision( Authorization $authorization, int $user_id, string $request_id, array $granted ): void {
 		check_admin_referer( $this->get_nonce_action( $request_id ), 'oauth_pilot_nonce' );
 
 		$decision = isset( $_POST['oauth_pilot_decision'] )
@@ -126,7 +135,7 @@ class Consent {
 			: '';
 
 		if ( 'approve' === $decision ) {
-			$this->complete_approval( $authorization, $user_id );
+			$this->complete_approval( $authorization, $user_id, $granted );
 		}
 
 		$redirect = $this->authorization_service->deny( $authorization, $user_id );
@@ -134,8 +143,11 @@ class Consent {
 		$this->redirect_to_client( $redirect );
 	}
 
-	private function complete_approval( Authorization $authorization, int $user_id ): void {
-		$redirect = $this->authorization_service->approve( $authorization, $user_id );
+	/**
+	 * @param string[] $granted The scopes this user may grant.
+	 */
+	private function complete_approval( Authorization $authorization, int $user_id, array $granted ): void {
+		$redirect = $this->authorization_service->approve( $authorization, $user_id, $granted );
 
 		if ( ! isset( $redirect ) ) {
 			$this->render_error( __( 'This authorization request was already completed.', 'wpelevator-oauth-pilot' ) );
@@ -229,7 +241,11 @@ class Consent {
 		);
 	}
 
-	private function render_consent_form( Authorization $authorization, Client $client, Protected_Resource $protected_resource, string $request_id ): void {
+	/**
+	 * @param string[] $granted The scopes this user may grant, which is what the
+	 *                          screen offers and approval issues.
+	 */
+	private function render_consent_form( Authorization $authorization, Client $client, Protected_Resource $protected_resource, string $request_id, array $granted ): void {
 		$user = wp_get_current_user();
 		$role_name = $this->get_user_role_name( $user );
 		$redirect_host = Redirect_URI::get_display_host( $authorization->get_redirect_uri() );
@@ -291,7 +307,7 @@ class Consent {
 
 			<h2 class="oauth-pilot-consent__heading"><?php esc_html_e( 'Permissions requested', 'wpelevator-oauth-pilot' ); ?></h2>
 			<ul class="oauth-pilot-consent__permissions">
-				<?php foreach ( $authorization->get_scopes() as $scope_name ) : ?>
+				<?php foreach ( $granted as $scope_name ) : ?>
 					<?php $scope = $this->scopes->get( $scope_name ); ?>
 					<li>
 						<strong><?php echo esc_html( $scope ? $scope->get_label() : $scope_name ); ?></strong>
