@@ -1,0 +1,39 @@
+{
+    "packages": [
+        {
+            "name": "wpelevator/update-client",
+            "version": "0.4.0",
+            "version_normalized": "0.4.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/wpelevator/update-client.git",
+                "reference": "26ea168eedae7517bc1100f2a869013e9cfff62a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wpelevator/update-client/zipball/26ea168eedae7517bc1100f2a869013e9cfff62a",
+                "reference": "26ea168eedae7517bc1100f2a869013e9cfff62a",
+                "shasum": ""
+            },
+            "time": "2026-08-11T13:39:52+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "classmap": [
+                    "php/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "description": "Implement automatic updates for self-hosted WordPress plugins and themes",
+            "support": {
+                "source": "https://github.com/wpelevator/update-client/tree/0.4.0"
+            },
+            "install-path": "../wpelevator/update-client"
+        }
+    ],
+    "dev": false,
+    "dev-package-names": []
+}
