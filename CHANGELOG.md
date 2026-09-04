@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.3.0 (2026-09-04)
+
+- Fixed client registration refusing an entire client id metadata document because it advertised an extension grant this server does not implement, which blocked Claude and any other client whose published document lists `urn:ietf:params:oauth:grant-type:jwt-bearer`. Unsupported grants are now dropped and the supported ones kept, as RFC 7591 allows, and a client left without `authorization_code` is still refused.
+- Fixed registration refusing a client that advertises response types beyond `code`, such as the OpenID Connect ones a client lists in the single document it publishes for every authorization server. Only `code` is registered, and a client that cannot use it is still refused.
+- Fixed an authorization request being refused outright when its scope string carried anything this server had not registered, so a client asking for `offline_access` to obtain a refresh token, or sending the OpenID Connect scopes out of habit, could not connect at all. A scope request is now narrowed to what the resource and the client's own ceiling allow, as RFC 6749 permits, and refused with `invalid_scope` only when nothing can be granted, naming the scopes the resource does support. Scopes belonging to another resource are narrowed the same way instead of failing a request that also asked for grantable ones.
+- Fixed a refresh request being refused when it echoed back a scope that had been ignored when the grant was made. Unregistered scopes are dropped before the check that a refresh may narrow but never widen a grant, which is unchanged.
+
 ## 0.2.1 (2026-09-04)
 
 - Fixed the distribution build to include OAuth Pilot's Composer autoloader, preventing activation failures in standalone plugin installs.

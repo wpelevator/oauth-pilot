@@ -219,12 +219,28 @@ class Service {
 		if ( '' !== $requested_scope ) {
 			$requested = $this->scopes->parse( $requested_scope );
 
+			/*
+			 * Drop what this server never registered, exactly as the
+			 * authorization request does. A client that echoes its original
+			 * scope string here is otherwise refused over a scope that was
+			 * silently ignored when the grant was made.
+			 */
+			$requested = array_values(
+				array_filter(
+					$requested,
+					fn ( $name ) => $this->scopes->has( (string) $name )
+				)
+			);
+
 			// A refresh may narrow the grant, never widen it.
 			if ( ! empty( array_diff( $requested, $scopes ) ) ) {
 				throw new OAuth_Error( 'invalid_scope', __( 'A refresh request may not add scopes.', 'wpelevator-oauth-pilot' ) );
 			}
 
-			$scopes = $requested;
+			// Nothing recognizable was asked for, so the grant carries over whole.
+			if ( ! empty( $requested ) ) {
+				$scopes = $requested;
+			}
 		}
 
 		if ( ! $this->tokens->consume_refresh_token( $token ) ) {

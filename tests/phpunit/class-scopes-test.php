@@ -95,7 +95,7 @@ class Scopes_Test extends \WP_UnitTestCase {
 		);
 	}
 
-	public function test_rejects_a_scope_the_resource_does_not_support() {
+	public function test_rejects_a_request_for_only_a_scope_the_resource_does_not_support() {
 		$this->expectException( OAuth_Error::class );
 
 		$this->scopes->resolve_requested(
@@ -105,7 +105,7 @@ class Scopes_Test extends \WP_UnitTestCase {
 		);
 	}
 
-	public function test_rejects_a_scope_above_the_client_ceiling() {
+	public function test_rejects_a_request_for_only_a_scope_above_the_client_ceiling() {
 		$this->expectException( OAuth_Error::class );
 
 		$this->scopes->resolve_requested(
@@ -115,10 +115,70 @@ class Scopes_Test extends \WP_UnitTestCase {
 		);
 	}
 
-	public function test_rejects_an_unknown_scope() {
+	public function test_rejects_a_request_for_only_unknown_scopes() {
 		$this->expectException( OAuth_Error::class );
 
 		$this->scopes->resolve_requested( [ 'mcp:admin' ], $this->get_resource(), $this->get_client() );
+	}
+
+	public function test_drops_an_unknown_scope_and_grants_the_rest() {
+		$this->assertSame(
+			[ 'mcp:read' ],
+			$this->scopes->resolve_requested(
+				[ 'mcp:read', 'offline_access' ],
+				$this->get_resource(),
+				$this->get_client()
+			),
+			'A client sends one scope string to every server it talks to, so a scope this one never registered must not cost it the scopes it can have.'
+		);
+	}
+
+	public function test_drops_the_oidc_scopes_a_client_asks_for_by_habit() {
+		$this->assertSame(
+			[ 'mcp:read' ],
+			$this->scopes->resolve_requested(
+				[ 'openid', 'profile', 'email', 'mcp:read' ],
+				$this->get_resource(),
+				$this->get_client()
+			),
+			'This server is not an OpenID provider, and the OIDC scopes name nothing here, so they are ignored rather than fatal.'
+		);
+	}
+
+	public function test_drops_a_scope_the_resource_does_not_support_and_grants_the_rest() {
+		$this->assertSame(
+			[ 'mcp:read' ],
+			$this->scopes->resolve_requested(
+				[ 'mcp:read', 'mcp:tools' ],
+				$this->get_resource( [ 'scopes' => [ 'mcp:read' ] ] ),
+				$this->get_client()
+			),
+			'A scope belonging to another audience is dropped, not treated as a reason to deny the audience that was asked for.'
+		);
+	}
+
+	public function test_drops_a_scope_above_the_client_ceiling_and_grants_the_rest() {
+		$this->assertSame(
+			[ 'mcp:read' ],
+			$this->scopes->resolve_requested(
+				[ 'mcp:read', 'mcp:tools' ],
+				$this->get_resource(),
+				$this->get_client( [ 'mcp:read' ] )
+			),
+			'A restricted client still receives everything its ceiling allows.'
+		);
+	}
+
+	public function test_a_dropped_scope_is_never_reintroduced_by_an_implication() {
+		$this->assertSame(
+			[ 'mcp:read' ],
+			$this->scopes->resolve_requested(
+				[ 'mcp:read', 'mcp:tools' ],
+				$this->get_resource(),
+				$this->get_client( [ 'mcp:read' ] )
+			),
+			'Expansion runs on the granted set, so dropping mcp:tools must not bring it back through what it implies.'
+		);
 	}
 
 	public function test_satisfies_uses_implications() {

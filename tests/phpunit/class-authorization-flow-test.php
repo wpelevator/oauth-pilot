@@ -343,6 +343,81 @@ class Authorization_Flow_Test extends Test_Case {
 		);
 	}
 
+	public function test_a_scope_this_server_never_registered_is_ignored_end_to_end() {
+		$resource_uri = rest_url( 'ignored-scope-test/v1' );
+		$read_scope = 'ignored-scope-test:read';
+
+		add_action(
+			'oauth_pilot__register_scopes',
+			function ( Scopes $scopes ) use ( $read_scope ) {
+				$scopes->register( [ 'name' => $read_scope ] );
+			}
+		);
+
+		add_action(
+			'oauth_pilot__register_resources',
+			function ( Protected_Resources $resources ) use ( $read_scope, $resource_uri ) {
+				$resources->register(
+					[
+						'uri' => $resource_uri,
+						'name' => 'Ignored scope test resource',
+						'scopes' => [ $read_scope ],
+						'defaults' => [ $read_scope ],
+						'requires_resource' => true,
+					]
+				);
+			}
+		);
+		$this->plugin->get_scopes()->reset();
+		$this->plugin->get_resources()->reset();
+
+		$client = $this->create_public_client();
+		$verifier = Random::credential();
+
+		// What a client asking for a refresh token sends every server it meets.
+		$approved = $this->complete_authorization(
+			$client,
+			$verifier,
+			[
+				'resource' => $resource_uri,
+				'scope' => $read_scope . ' offline_access',
+			]
+		);
+
+		$issued = $this->post_form(
+			'/oauth-pilot/v1/token',
+			[
+				'grant_type' => 'authorization_code',
+				'code' => $approved['code'],
+				'redirect_uri' => $client->get_redirect_uris()[0],
+				'client_id' => $client->get_client_id(),
+				'code_verifier' => $verifier,
+			]
+		)->get_data();
+
+		$this->assertSame(
+			$read_scope,
+			$issued['scope'],
+			'offline_access names nothing on this server, so it is dropped and the token reports the scope that was actually granted.'
+		);
+
+		$refreshed = $this->post_form(
+			'/oauth-pilot/v1/token',
+			[
+				'grant_type' => 'refresh_token',
+				'refresh_token' => $issued['refresh_token'],
+				'client_id' => $client->get_client_id(),
+				'scope' => $read_scope . ' offline_access',
+			]
+		);
+
+		$this->assertSame(
+			$read_scope,
+			$refreshed->get_data()['scope'],
+			'A client echoing its original scope string on refresh must not be refused over a scope that was ignored when the grant was made.'
+		);
+	}
+
 	public function test_refresh_may_narrow_but_not_widen_the_grant() {
 		$resource_uri = rest_url( 'scope-test/v1' );
 		$read_scope = 'scope-test:read';

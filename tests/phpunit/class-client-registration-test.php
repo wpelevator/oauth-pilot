@@ -137,7 +137,47 @@ class Client_Registration_Test extends Test_Case {
 		);
 	}
 
-	public function test_rejects_an_unsupported_grant_type() {
+	public function test_drops_a_response_type_it_cannot_run_but_keeps_the_client() {
+		$response = $this->register(
+			[
+				'client_name' => 'OIDC capable',
+				'redirect_uris' => [ 'https://a.example.com/cb' ],
+				'response_types' => [ 'code', 'id_token' ],
+				'token_endpoint_auth_method' => 'none',
+			]
+		);
+
+		$this->assertSame(
+			201,
+			$response->get_status(),
+			'A client that can also run an OIDC flow lists those response types in the one document it publishes, and must not be refused for it.'
+		);
+
+		$this->assertSame(
+			[ 'code' ],
+			$response->get_data()['response_types'],
+			'Only the code response type is ever registered, and the response says so.'
+		);
+	}
+
+	public function test_rejects_a_client_that_cannot_use_the_code_response_type() {
+		$response = $this->register(
+			[
+				'client_name' => 'Implicit only',
+				'redirect_uris' => [ 'https://a.example.com/cb' ],
+				'response_types' => [ 'id_token' ],
+				'token_endpoint_auth_method' => 'none',
+			]
+		);
+
+		$this->assertSame(
+			'invalid_client_metadata',
+			$response->get_data()['error'],
+			'A client that cannot use the only response type this server implements would never complete a flow.'
+		);
+	}
+
+	public function test_rejects_a_client_left_with_no_grant_it_can_run() {
 		$response = $this->register(
 			[
 				'client_name' => 'Implicit',
@@ -149,7 +189,31 @@ class Client_Registration_Test extends Test_Case {
 		$this->assertSame(
 			'invalid_client_metadata',
 			$response->get_data()['error'],
-			'Registering a grant the server cannot run would produce a client that never works.'
+			'A client that asks only for grants this server cannot run would never work, so it is refused rather than registered.'
+		);
+	}
+
+	public function test_drops_an_extension_grant_but_keeps_the_client() {
+		$response = $this->register(
+			[
+				'client_name' => 'Claude',
+				'redirect_uris' => [ 'https://claude.ai/api/mcp/auth_callback' ],
+				'grant_types' => [ 'authorization_code', 'refresh_token', 'urn:ietf:params:oauth:grant-type:jwt-bearer' ],
+				'response_types' => [ 'code' ],
+				'token_endpoint_auth_method' => 'none',
+			]
+		);
+
+		$this->assertSame(
+			201,
+			$response->get_status(),
+			'A client whose supported grants are a match must not be refused over an extension grant it also happens to advertise.'
+		);
+
+		$this->assertSame(
+			[ 'authorization_code', 'refresh_token' ],
+			$response->get_data()['grant_types'],
+			'RFC 7591 has the server report the grants it actually stored, so the client learns the extension grant was not registered.'
 		);
 	}
 

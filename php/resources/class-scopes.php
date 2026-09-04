@@ -186,9 +186,20 @@ class Scopes {
 	}
 
 	/**
-	 * Reject unknown scopes and anything outside the client ceiling or the
-	 * resource's supported set. An empty request falls back to the resource
-	 * defaults, because agent clients routinely omit the scope parameter.
+	 * Narrow a scope request to what can actually be granted here.
+	 *
+	 * RFC 6749 lets the server ignore part of a scope request and report what
+	 * it granted instead, which is the only workable reading for agent
+	 * clients: one client sends one scope string to every authorization server
+	 * it talks to, so it routinely carries scopes this server never registered
+	 * (`offline_access` to ask for a refresh token, the OIDC set) alongside the
+	 * ones it wants. Refusing the request over those denies a client every
+	 * scope it could have had. Dropping them grants nothing that was not
+	 * already grantable, and the granted set is what the consent screen shows
+	 * and the token response reports.
+	 *
+	 * An empty request falls back to the resource defaults, because agent
+	 * clients routinely omit the scope parameter.
 	 *
 	 * @throws OAuth_Error When nothing can be granted.
 	 */
@@ -204,42 +215,46 @@ class Scopes {
 		$supported = $protected_resource->get_scopes();
 		$ceiling = $client->get_scopes();
 
-		foreach ( $requested as $name ) {
-			if ( ! $this->has( (string) $name ) ) {
-				throw new OAuth_Error(
-					'invalid_scope',
-					sprintf(
-						/* translators: %s: the requested scope name. */
-						__( 'Unknown scope: %s', 'wpelevator-oauth-pilot' ),
-						$name
-					)
-				);
-			}
+		$granted = array_values(
+			array_filter(
+				array_map( 'strval', $requested ),
+				fn ( string $name ) => $this->is_grantable( $name, $supported, $ceiling )
+			)
+		);
 
-			if ( ! empty( $supported ) && ! in_array( $name, $supported, true ) ) {
-				throw new OAuth_Error(
-					'invalid_scope',
-					sprintf(
-						/* translators: %s: the requested scope name. */
-						__( 'The requested resource does not support the scope: %s', 'wpelevator-oauth-pilot' ),
-						$name
+		if ( empty( $granted ) ) {
+			throw new OAuth_Error(
+				'invalid_scope',
+				empty( $supported )
+					? __( 'None of the requested scopes can be granted.', 'wpelevator-oauth-pilot' )
+					: sprintf(
+						/* translators: %s: the space separated scopes the resource supports. */
+						__( 'None of the requested scopes can be granted for this resource, which supports: %s', 'wpelevator-oauth-pilot' ),
+						implode( ' ', $supported )
 					)
-				);
-			}
-
-			if ( ! empty( $ceiling ) && ! in_array( $name, $ceiling, true ) ) {
-				throw new OAuth_Error(
-					'invalid_scope',
-					sprintf(
-						/* translators: %s: the requested scope name. */
-						__( 'The client is not allowed to request the scope: %s', 'wpelevator-oauth-pilot' ),
-						$name
-					)
-				);
-			}
+			);
 		}
 
-		return $this->expand( $requested );
+		return $this->expand( $granted );
+	}
+
+	/**
+	 * Whether one requested scope can be granted for this resource and client.
+	 *
+	 * @param string[] $supported The scopes the resource offers, empty for any.
+	 * @param string[] $ceiling   The client's own ceiling, empty for any.
+	 */
+	private function is_grantable( string $name, array $supported, array $ceiling ): bool {
+		// Registered on this server, so it names a capability at all.
+		$is_registered = $this->has( $name );
+
+		// Belongs to the audience this token would be minted for.
+		$is_offered = empty( $supported ) || in_array( $name, $supported, true );
+
+		// Within what this client was allowed to ask for.
+		$is_allowed = empty( $ceiling ) || in_array( $name, $ceiling, true );
+
+		return $is_registered && $is_offered && $is_allowed;
 	}
 
 	/**

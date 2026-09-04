@@ -139,6 +139,28 @@ class Cimd_Test extends Test_Case {
 		$this->assertSame( $client->get_client_id(), $this->plugin->get_clients()->get_by_metadata_url( self::METADATA_URL )->get_client_id(), 'The client is resolvable by its metadata URL.' );
 	}
 
+	public function test_resolution_drops_an_extension_grant_the_server_cannot_run() {
+		$document = $this->get_valid_document();
+
+		// The document Claude publishes, which every server it connects to reads.
+		$document['grant_types'] = [ 'authorization_code', 'refresh_token', 'urn:ietf:params:oauth:grant-type:jwt-bearer' ];
+
+		$this->mock_metadata_response( $document );
+
+		$client = $this->plugin->get_cimd()->resolve_for_authorization( self::METADATA_URL );
+
+		$this->assertSame(
+			[ 'authorization_code', 'refresh_token' ],
+			$client->get_grant_types(),
+			'A metadata document is published once for every server, so an extension grant this one cannot run is dropped rather than treated as a fatal document error.'
+		);
+
+		$this->assertFalse(
+			$client->allows_grant( 'urn:ietf:params:oauth:grant-type:jwt-bearer' ),
+			'Dropping the grant must not leave the client holding it.'
+		);
+	}
+
 	public function test_resolution_accepts_live_http_header_dictionary() {
 		$this->mock_dns( [ '93.184.216.34' ] );
 

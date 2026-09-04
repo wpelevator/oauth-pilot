@@ -359,7 +359,18 @@ class Registration {
 	}
 
 	/**
-	 * @throws OAuth_Error When an unsupported grant is requested.
+	 * Keep the grants this server can run and drop the rest.
+	 *
+	 * RFC 7591 lets the server replace requested metadata with suitable values,
+	 * and the registration response reports back what was stored. A client id
+	 * metadata document matters more here: it is published once for every
+	 * authorization server a client talks to, so it routinely lists extension
+	 * grants this server does not implement. Refusing the whole document over
+	 * one of them locks out a client whose grants are otherwise a match, while
+	 * dropping them concedes nothing, because the token endpoint dispatches
+	 * from its own allowlist rather than from what a client registered.
+	 *
+	 * @throws OAuth_Error When no usable grant is left.
 	 */
 	private function normalize_grant_types( $grant_types ): array {
 		if ( empty( $grant_types ) ) {
@@ -374,21 +385,12 @@ class Registration {
 			);
 		}
 
-		foreach ( $grant_types as $grant_type ) {
-			if ( ! in_array( $grant_type, self::ALLOWED_GRANT_TYPES, true ) ) {
-				throw new OAuth_Error(
-					'invalid_client_metadata',
-					sprintf(
-						/* translators: %s: the requested grant type. */
-						__( 'Unsupported grant type: %s', 'wpelevator-oauth-pilot' ),
-						is_scalar( $grant_type ) ? (string) $grant_type : ''
-					),
-					400
-				);
-			}
-		}
+		// Compared as strings, so anything else the document carried is dropped.
+		$requested = array_filter( $grant_types, 'is_string' );
 
-		if ( ! in_array( Client::GRANT_AUTHORIZATION_CODE, $grant_types, true ) ) {
+		$supported = array_values( array_intersect( self::ALLOWED_GRANT_TYPES, $requested ) );
+
+		if ( ! in_array( Client::GRANT_AUTHORIZATION_CODE, $supported, true ) ) {
 			throw new OAuth_Error(
 				'invalid_client_metadata',
 				__( 'The authorization_code grant is required.', 'wpelevator-oauth-pilot' ),
@@ -396,25 +398,33 @@ class Registration {
 			);
 		}
 
-		return array_values( array_unique( $grant_types ) );
+		return $supported;
 	}
 
 	/**
-	 * @throws OAuth_Error When a response type other than code is requested.
+	 * Require the one response type this server implements and ignore the rest.
+	 *
+	 * Same reasoning as the grant types: a metadata document is published once
+	 * for every authorization server, so a client that can also run an OIDC
+	 * flow lists those response types here. Only `code` is ever honoured, and
+	 * the registration response says so, so the others cost nothing to ignore.
+	 *
+	 * @throws OAuth_Error When the code response type is not among them.
 	 */
 	private function assert_response_types( $response_types ): void {
 		if ( ! is_array( $response_types ) ) {
 			$response_types = [ $response_types ];
 		}
 
-		foreach ( $response_types as $response_type ) {
-			if ( 'code' !== $response_type ) {
-				throw new OAuth_Error(
-					'invalid_client_metadata',
-					__( 'Only the code response type is supported.', 'wpelevator-oauth-pilot' ),
-					400
-				);
-			}
+		// Unstated takes the only one on offer; stated has to include it.
+		$is_supported = empty( $response_types ) || in_array( 'code', $response_types, true );
+
+		if ( ! $is_supported ) {
+			throw new OAuth_Error(
+				'invalid_client_metadata',
+				__( 'The code response type is required.', 'wpelevator-oauth-pilot' ),
+				400
+			);
 		}
 	}
 
