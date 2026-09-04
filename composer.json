@@ -1,0 +1,25 @@
+{
+	"name": "wpelevator/oauth-pilot",
+	"description": "OAuth 2.1 authorization server for WordPress",
+	"license": "GPL-2.0-or-later",
+	"type": "wordpress-plugin",
+	"autoload": {
+		"classmap": [
+			"php/"
+		]
+	},
+	"require": {
+		"composer/installers": "^1.0 || ^2.0"
+	},
+	"scripts": {
+		"build": "@composer install --working-dir=vendor-isolated",
+		"post-install-cmd": "@composer install --working-dir=vendor-isolated",
+		"post-update-cmd": "@composer update --working-dir=vendor-isolated"
+	},
+	"config": {
+		"autoloader-suffix": "OAuth_Pilot_Plugin",
+		"allow-plugins": {
+			"composer/installers": true
+		}
+	}
+}

@@ -1,0 +1,27 @@
+/**
+ * Consent screen additions to the login stylesheet.
+ *
+ * Colors are deliberately absent: the login screen is frequently restyled, so
+ * severity is expressed with the notice classes core already ships and the
+ * site's own palette continues to apply.
+ */
+
+/*
+ * The login stylesheet wraps long words only inside notices, so the client
+ * identifier - an opaque token, or a metadata document URL - would otherwise
+ * run past the edge of the form.
+ */
+.login .oauth-pilot-consent__details code {
+	word-wrap: break-word;
+	overflow-wrap: anywhere;
+}
+
+/*
+ * The login stylesheet styles no headings inside the form, and a browser
+ * default h2 would tower over the card.
+ */
+.login .oauth-pilot-consent__heading {
+	font-size: 14px;
+	font-weight: 600;
+	margin: 1.5em 0 0.5em;
+}

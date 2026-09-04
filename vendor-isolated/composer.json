@@ -1,0 +1,22 @@
+{
+	"minimum-stability": "dev",
+	"prefer-stable": true,
+	"optimize-autoloader": true,
+	"config": {
+		"platform": {
+			"php": "7.4"
+		},
+		"autoloader-suffix": "WPElevatorOAuthPilotVendor",
+		"sort-packages": true,
+		"allow-plugins": {
+			"wpelevator/vendor-isolator": true
+		},
+		"vendor-isolator": {
+			"prefix": "WPElevator\\OAuth_Pilot_Vendor"
+		}
+	},
+	"require": {
+		"wpelevator/update-client": "^0.4",
+		"wpelevator/vendor-isolator": "^0.1"
+	}
+}

@@ -1,0 +1,12 @@
+{
+	"private": true,
+	"name": "@wpelevator/oauth-pilot",
+	"scripts": {
+		"build": "composer build",
+		"dev-client": "node tools/dev-client/server.mjs"
+	},
+	"devDependencies": {
+		"express": "^5.2.1",
+		"oauth4webapi": "^3.8.7"
+	}
+}

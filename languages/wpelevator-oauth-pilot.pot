@@ -1,0 +1,833 @@
+# Copyright (C) 2026 WP Elevator
+# This file is distributed under the same license as the OAuth Pilot plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: OAuth Pilot 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/wpelevator/basement\n"
+"Last-Translator: support@wpelevator.com\n"
+"Language-Team: support@wpelevator.com\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: wpelevator-oauth-pilot\n"
+
+#. Plugin Name of the plugin
+#: oauth-pilot.php:3
+#: php/admin/class-screen.php:94
+#: php/admin/class-screen.php:95
+#: php/admin/class-screen.php:177
+msgid "OAuth Pilot"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: oauth-pilot.php:8
+msgid "https://wpelevator.com/plugins/oauth-pilot"
+msgstr ""
+
+#. Description of the plugin
+#: oauth-pilot.php:4
+msgid "OAuth 2.1 authorization server for WordPress. Lets agent MCP clients and other applications authenticate against this site."
+msgstr ""
+
+#. Author of the plugin
+#: oauth-pilot.php:5
+msgid "WP Elevator"
+msgstr ""
+
+#. Author URI of the plugin
+#: oauth-pilot.php:6
+msgid "https://wpelevator.com"
+msgstr ""
+
+#: php/admin/class-clients-table.php:35
+#: php/admin/class-screen.php:291
+msgid "Name"
+msgstr ""
+
+#: php/admin/class-clients-table.php:36
+msgid "Client ID"
+msgstr ""
+
+#: php/admin/class-clients-table.php:37
+#: php/admin/class-screen.php:302
+msgid "Type"
+msgstr ""
+
+#: php/admin/class-clients-table.php:38
+msgid "Registered"
+msgstr ""
+
+#: php/admin/class-clients-table.php:39
+msgid "Redirects to"
+msgstr ""
+
+#: php/admin/class-clients-table.php:40
+#: php/admin/class-screen.php:68
+msgid "Status"
+msgstr ""
+
+#: php/admin/class-clients-table.php:41
+#: php/admin/class-profile.php:62
+msgid "Last used"
+msgstr ""
+
+#: php/admin/class-clients-table.php:66
+msgid "No clients have been registered yet."
+msgstr ""
+
+#: php/admin/class-clients-table.php:79
+msgid "Revoke this client and all of its tokens?"
+msgstr ""
+
+#: php/admin/class-clients-table.php:80
+#: php/admin/class-profile.php:76
+msgid "Revoke"
+msgstr ""
+
+#: php/admin/class-clients-table.php:87
+msgid "Permanently delete this client?"
+msgstr ""
+
+#: php/admin/class-clients-table.php:88
+msgid "Delete"
+msgstr ""
+
+#: php/admin/class-clients-table.php:109
+msgid "Confidential"
+msgstr ""
+
+#: php/admin/class-clients-table.php:110
+msgid "Public"
+msgstr ""
+
+#: php/admin/class-clients-table.php:114
+msgid "Self-published (metadata document)"
+msgstr ""
+
+#: php/admin/class-clients-table.php:118
+msgid "Dynamically"
+msgstr ""
+
+#: php/admin/class-clients-table.php:119
+msgid "By an administrator"
+msgstr ""
+
+#: php/admin/class-clients-table.php:132
+msgid "Active"
+msgstr ""
+
+#: php/admin/class-clients-table.php:133
+msgid "Revoked"
+msgstr ""
+
+#: php/admin/class-clients-table.php:139
+#: php/admin/class-profile.php:73
+msgid "Never"
+msgstr ""
+
+#: php/admin/class-profile.php:51
+msgid "Authorized Applications"
+msgstr ""
+
+#: php/admin/class-profile.php:54
+msgid "No applications have been authorized for this account."
+msgstr ""
+
+#: php/admin/class-profile.php:59
+msgid "Application"
+msgstr ""
+
+#: php/admin/class-profile.php:60
+msgid "Resource"
+msgstr ""
+
+#: php/admin/class-profile.php:61
+msgid "Permissions"
+msgstr ""
+
+#: php/admin/class-profile.php:94
+msgid "You are not allowed to revoke this authorization."
+msgstr ""
+
+#: php/admin/class-screen.php:66
+#: php/class-plugin.php:225
+msgid "Settings"
+msgstr ""
+
+#: php/admin/class-screen.php:67
+msgid "Clients"
+msgstr ""
+
+#. translators: %s: link to the General Settings screen.
+#: php/admin/class-screen.php:112
+#, php-format
+msgid "The site address is not HTTPS. OAuth clients will refuse to connect. Update it on the <a href=\"%s\">General Settings</a> screen."
+msgstr ""
+
+#. translators: %s: the metadata URL that has to work.
+#: php/admin/class-screen.php:122
+#, php-format
+msgid "This site is a subdirectory site on a multisite network. RFC 8414 places the authorization server metadata at <code>%s</code>, which is at the root of the host, where the request resolves to the main site of the network and cannot serve this site. Use the main site as the issuer, or give this site its own subdomain."
+msgstr ""
+
+#. translators: %s: the metadata URL that has to work.
+#: php/admin/class-screen.php:128
+#, php-format
+msgid "WordPress is installed in a subdirectory. RFC 8414 places the authorization server metadata at <code>%s</code>, which is at the root of the host and outside the paths WordPress rewrite rules can reach from a subdirectory install. Add a server-level rewrite or proxy rule for that path, or run the authorization server on a root install."
+msgstr ""
+
+#. translators: %s: link to the Permalinks settings screen.
+#: php/admin/class-screen.php:136
+#, php-format
+msgid "The well-known discovery rewrite rules are missing. Visit <a href=\"%s\">Settings then Permalinks</a> and save to flush the rewrite rules."
+msgstr ""
+
+#: php/admin/class-screen.php:142
+msgid "The cleanup schedule is not registered, so expired authorizations and tokens will not be removed."
+msgstr ""
+
+#: php/admin/class-screen.php:170
+#: php/admin/class-screen.php:436
+msgid "You are not allowed to manage OAuth Pilot."
+msgstr ""
+
+#: php/admin/class-screen.php:219
+msgid "Dynamic client registration"
+msgstr ""
+
+#: php/admin/class-screen.php:224
+msgid "Enable dynamic client registration"
+msgstr ""
+
+#: php/admin/class-screen.php:229
+msgid "Limit dynamic client domains"
+msgstr ""
+
+#: php/admin/class-screen.php:232
+msgid "Limit the dynamic client registration only to these hosts (one domain per line). Listed domain names are matched against the client redirect_url hostname. Loopback callbacks such as localhost or 127.0.0.1 used by native and CLI clients are always allowed. Leave empty to allow any host."
+msgstr ""
+
+#: php/admin/class-screen.php:236
+msgid "Client ID Metadata Documents (CIMD) registration"
+msgstr ""
+
+#: php/admin/class-screen.php:241
+msgid "Accept HTTPS URL client identifiers backed by a client metadata document"
+msgstr ""
+
+#: php/admin/class-screen.php:243
+msgid "Recommended for MCP clients instead of dynamic client registration. WordPress fetches and validates the client's self-published metadata document at the client_id URL. The document host must be publicly reachable."
+msgstr ""
+
+#: php/admin/class-screen.php:247
+msgid "REST API authentication"
+msgstr ""
+
+#: php/admin/class-screen.php:252
+msgid "Accept OAuth bearer tokens for the WordPress REST API. Endpoint capability checks still apply."
+msgstr ""
+
+#: php/admin/class-screen.php:257
+msgid "Access token lifetime"
+msgstr ""
+
+#: php/admin/class-screen.php:260
+#: php/admin/class-screen.php:267
+msgid "seconds"
+msgstr ""
+
+#: php/admin/class-screen.php:264
+msgid "Refresh token lifetime"
+msgstr ""
+
+#: php/admin/class-screen.php:285
+msgid "Add a client"
+msgstr ""
+
+#: php/admin/class-screen.php:295
+msgid "Redirect URIs"
+msgstr ""
+
+#: php/admin/class-screen.php:298
+msgid "List of allowed redirect URIs, one per line. Must be HTTPS, or HTTP for loopback address."
+msgstr ""
+
+#: php/admin/class-screen.php:304
+msgid "Public, authenticates with PKCE only"
+msgstr ""
+
+#: php/admin/class-screen.php:305
+msgid "Confidential, receives a client secret"
+msgstr ""
+
+#: php/admin/class-screen.php:309
+msgid "Client authentication"
+msgstr ""
+
+#: php/admin/class-screen.php:315
+msgid "Only used by confidential clients."
+msgstr ""
+
+#: php/admin/class-screen.php:319
+msgid "Add client"
+msgstr ""
+
+#: php/admin/class-screen.php:334
+msgid "Issuer"
+msgstr ""
+
+#: php/admin/class-screen.php:338
+msgid "Authorization server metadata"
+msgstr ""
+
+#: php/admin/class-screen.php:348
+msgid "Registered resources"
+msgstr ""
+
+#: php/admin/class-screen.php:358
+msgid "Active tokens"
+msgstr ""
+
+#: php/admin/class-screen.php:397
+msgid "The client secret is shown only once. Copy it now."
+msgstr ""
+
+#: php/admin/class-screen.php:400
+msgid "Return to the OAuth Pilot clients"
+msgstr ""
+
+#: php/admin/class-screen.php:402
+msgid "Client created"
+msgstr ""
+
+#: php/admin/class-screen.php:420
+msgid "That client no longer exists."
+msgstr ""
+
+#: php/authorization/class-consent.php:72
+msgid "This authorization request is missing its identifier."
+msgstr ""
+
+#: php/authorization/class-consent.php:78
+msgid "This authorization request has expired or was already used. Start the connection again from your application."
+msgstr ""
+
+#: php/authorization/class-consent.php:90
+msgid "This authorization request belongs to a different sign-in session."
+msgstr ""
+
+#: php/authorization/class-consent.php:96
+msgid "This authorization request is no longer available."
+msgstr ""
+
+#: php/authorization/class-consent.php:103
+msgid "The application that started this request is no longer available."
+msgstr ""
+
+#: php/authorization/class-consent.php:107
+msgid "Your account is not allowed to grant the requested permissions."
+msgstr ""
+
+#: php/authorization/class-consent.php:141
+msgid "This authorization request was already completed."
+msgstr ""
+
+#: php/authorization/class-consent.php:190
+msgid "Authorization"
+msgstr ""
+
+#: php/authorization/class-consent.php:197
+msgid "Back to site"
+msgstr ""
+
+#: php/authorization/class-consent.php:255
+msgid "Authorize application"
+msgstr ""
+
+#. translators: 1: application name, 2: WordPress user login, 3: user role name.
+#: php/authorization/class-consent.php:266
+#, php-format
+msgid "Application named %1$s wants to access this site as you (%2$s with role %3$s)."
+msgstr ""
+
+#. translators: 1: application name, 2: WordPress user login.
+#: php/authorization/class-consent.php:274
+#, php-format
+msgid "Application named %1$s wants to access this site as you (%2$s)."
+msgstr ""
+
+#: php/authorization/class-consent.php:284
+msgid "This application registered itself automatically and has not been reviewed by an administrator."
+msgstr ""
+
+#: php/authorization/class-consent.php:292
+msgid "Permissions requested"
+msgstr ""
+
+#: php/authorization/class-consent.php:306
+msgid "Resource:"
+msgstr ""
+
+#: php/authorization/class-consent.php:308
+msgid "Redirects to:"
+msgstr ""
+
+#: php/authorization/class-consent.php:310
+msgid "Client ID:"
+msgstr ""
+
+#: php/authorization/class-consent.php:316
+msgid "Approve"
+msgstr ""
+
+#: php/authorization/class-consent.php:319
+msgid "Deny"
+msgstr ""
+
+#: php/authorization/class-consent.php:326
+msgid "Sign in as a different user"
+msgstr ""
+
+#: php/authorization/class-service.php:83
+msgid "The client_id parameter is required."
+msgstr ""
+
+#: php/authorization/class-service.php:91
+#: php/client/class-authentication.php:85
+#: php/client/class-cimd.php:102
+#: php/client/class-cimd.php:113
+msgid "Unknown or inactive client."
+msgstr ""
+
+#: php/authorization/class-service.php:97
+msgid "The redirect_uri parameter is required."
+msgstr ""
+
+#: php/authorization/class-service.php:108
+msgid "The redirect URI is not registered for this client."
+msgstr ""
+
+#: php/authorization/class-service.php:115
+msgid "This client may not use the authorization code grant."
+msgstr ""
+
+#: php/authorization/class-service.php:119
+#: php/client/class-registration.php:414
+msgid "Only the code response type is supported."
+msgstr ""
+
+#: php/authorization/class-service.php:123
+msgid "The code_challenge_method must be S256."
+msgstr ""
+
+#: php/authorization/class-service.php:129
+msgid "A valid PKCE code challenge is required."
+msgstr ""
+
+#: php/authorization/class-service.php:166
+msgid "Too many authorization requests are pending. Try again later."
+msgstr ""
+
+#: php/authorization/class-service.php:182
+msgid "The authorization request could not be stored."
+msgstr ""
+
+#: php/authorization/class-service.php:210
+msgid "Too many authorization requests. Try again later."
+msgstr ""
+
+#: php/authorization/class-service.php:347
+msgid "The requested resource is not registered on this server."
+msgstr ""
+
+#: php/authorization/class-service.php:356
+msgid "A resource parameter is required because this server has no default resource."
+msgstr ""
+
+#: php/class-plugin.php:176
+msgid "WordPress REST API"
+msgstr ""
+
+#: php/class-plugin.php:187
+msgid "Read content"
+msgstr ""
+
+#: php/class-plugin.php:188
+msgid "Read data you can already read on this site."
+msgstr ""
+
+#: php/class-plugin.php:196
+msgid "Create and edit content"
+msgstr ""
+
+#: php/class-plugin.php:197
+msgid "Create, edit and delete data you can already change on this site."
+msgstr ""
+
+#: php/class-settings.php:50
+msgid "Whether anonymous clients may register themselves over RFC 7591."
+msgstr ""
+
+#: php/class-settings.php:56
+msgid "Whether an HTTPS URL client_id resolves to a Client ID Metadata Document."
+msgstr ""
+
+#: php/class-settings.php:62
+msgid "Newline separated redirect URI hosts dynamic registration accepts. Empty allows any host."
+msgstr ""
+
+#: php/class-settings.php:70
+msgid "Whether an OAuth bearer token may authenticate ordinary WordPress REST requests."
+msgstr ""
+
+#: php/class-settings.php:76
+msgid "How long an access token stays valid, in seconds."
+msgstr ""
+
+#: php/class-settings.php:84
+msgid "How long a refresh token stays valid, in seconds."
+msgstr ""
+
+#: php/client/class-authentication.php:43
+msgid "Client credentials must be sent either in the Authorization header or in the request body, not both."
+msgstr ""
+
+#: php/client/class-authentication.php:52
+msgid "The client identifier in the request body does not match the Authorization header."
+msgstr ""
+
+#: php/client/class-authentication.php:138
+msgid "A client identifier is required."
+msgstr ""
+
+#: php/client/class-authentication.php:174
+msgid "Client authentication failed."
+msgstr ""
+
+#: php/client/class-cimd.php:135
+#: php/client/class-cimd.php:171
+#: php/client/class-registration.php:94
+#: php/client/class-registration.php:152
+msgid "The client could not be stored."
+msgstr ""
+
+#: php/client/class-cimd.php:147
+msgid "This site has reached its client limit."
+msgstr ""
+
+#: php/client/class-cimd.php:407
+#: php/client/class-cimd.php:419
+#: php/client/class-cimd.php:429
+msgid "Too many client metadata fetches. Try again later."
+msgstr ""
+
+#: php/client/class-cimd.php:499
+msgid "The client metadata document could not be fetched or is invalid."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:34
+msgid "The redirect URI is empty."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:38
+msgid "The redirect URI is too long."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:42
+msgid "The redirect URI contains whitespace or control characters."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:46
+msgid "Wildcard redirect URIs are not supported."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:52
+msgid "The redirect URI must be absolute and include a scheme."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:56
+msgid "The redirect URI must not contain a fragment."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:60
+msgid "The redirect URI must not contain userinfo."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:66
+#: php/client/class-redirect-uri.php:103
+msgid "The redirect URI scheme is not allowed."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:71
+#: php/client/class-redirect-uri.php:79
+msgid "The redirect URI must include a host."
+msgstr ""
+
+#: php/client/class-redirect-uri.php:83
+msgid "Plain HTTP redirect URIs are only allowed for loopback addresses."
+msgstr ""
+
+#: php/client/class-registration.php:46
+#: php/rest/class-controller.php:156
+msgid "Dynamic client registration is disabled on this site."
+msgstr ""
+
+#: php/client/class-registration.php:65
+msgid "This site only accepts dynamic registration for redirect URIs on allow-listed hostnames."
+msgstr ""
+
+#: php/client/class-registration.php:73
+msgid "Dynamic registration only issues public clients, which must use token_endpoint_auth_method=none."
+msgstr ""
+
+#: php/client/class-registration.php:130
+msgid "Public clients must use token_endpoint_auth_method=none."
+msgstr ""
+
+#: php/client/class-registration.php:184
+msgid "Unsupported token endpoint authentication method."
+msgstr ""
+
+#. translators: %s: client metadata field name.
+#: php/client/class-registration.php:208
+#, php-format
+msgid "The %s value is too long."
+msgstr ""
+
+#. translators: %s: client metadata field name.
+#: php/client/class-registration.php:223
+#, php-format
+msgid "The %s value must be an absolute HTTP URL."
+msgstr ""
+
+#: php/client/class-registration.php:237
+msgid "The application_type must be web or native."
+msgstr ""
+
+#: php/client/class-registration.php:257
+msgid "Unnamed client"
+msgstr ""
+
+#: php/client/class-registration.php:317
+msgid "At least one redirect URI is required."
+msgstr ""
+
+#: php/client/class-registration.php:325
+msgid "Too many redirect URIs."
+msgstr ""
+
+#: php/client/class-registration.php:336
+msgid "Redirect URIs must be strings."
+msgstr ""
+
+#: php/client/class-registration.php:350
+msgid "Duplicate redirect URIs are not accepted."
+msgstr ""
+
+#: php/client/class-registration.php:372
+msgid "The grant_types value must be an array."
+msgstr ""
+
+#. translators: %s: the requested grant type.
+#: php/client/class-registration.php:383
+#, php-format
+msgid "Unsupported grant type: %s"
+msgstr ""
+
+#: php/client/class-registration.php:394
+msgid "The authorization_code grant is required."
+msgstr ""
+
+#: php/client/class-registration.php:430
+msgid "This site has reached its dynamic client registration limit."
+msgstr ""
+
+#: php/client/class-registration.php:442
+#: php/client/class-registration.php:452
+msgid "Too many registration attempts. Try again later."
+msgstr ""
+
+#. translators: %s: comma separated list of request parameter names.
+#: php/http/class-form-body.php:87
+#, php-format
+msgid "Repeated request parameters are not accepted: %s"
+msgstr ""
+
+#: php/resources/class-scopes.php:113
+msgid "The requested scope is malformed."
+msgstr ""
+
+#: php/resources/class-scopes.php:117
+msgid "The requested scope contains duplicates."
+msgstr ""
+
+#: php/resources/class-scopes.php:201
+msgid "No scopes were requested and the resource has no default scopes."
+msgstr ""
+
+#. translators: %s: the requested scope name.
+#: php/resources/class-scopes.php:213
+#, php-format
+msgid "Unknown scope: %s"
+msgstr ""
+
+#. translators: %s: the requested scope name.
+#: php/resources/class-scopes.php:224
+#, php-format
+msgid "The requested resource does not support the scope: %s"
+msgstr ""
+
+#. translators: %s: the requested scope name.
+#: php/resources/class-scopes.php:235
+#, php-format
+msgid "The client is not allowed to request the scope: %s"
+msgstr ""
+
+#: php/rest/class-authentication.php:151
+msgid "This REST resource has no OAuth scope mapping."
+msgstr ""
+
+#: php/rest/class-controller.php:108
+msgid "Repeated request parameters are not accepted."
+msgstr ""
+
+#: php/rest/class-controller.php:167
+msgid "The registration request is too large."
+msgstr ""
+
+#: php/rest/class-controller.php:175
+msgid "The registration endpoint accepts application/json."
+msgstr ""
+
+#: php/rest/class-controller.php:185
+msgid "The registration request body must be a JSON object."
+msgstr ""
+
+#: php/rest/class-controller.php:218
+msgid "This endpoint accepts application/x-www-form-urlencoded requests."
+msgstr ""
+
+#: php/token/class-bearer-validator.php:87
+msgid "An OAuth bearer token is required."
+msgstr ""
+
+#: php/token/class-bearer-validator.php:105
+msgid "The requested resource is not registered with OAuth Pilot."
+msgstr ""
+
+#: php/token/class-bearer-validator.php:115
+msgid "The access token is expired, revoked or unknown."
+msgstr ""
+
+#: php/token/class-bearer-validator.php:134
+msgid "The access token was issued for a different resource."
+msgstr ""
+
+#: php/token/class-bearer-validator.php:146
+msgid "The client this token belongs to is no longer active."
+msgstr ""
+
+#: php/token/class-bearer-validator.php:158
+msgid "The user this token represents no longer exists."
+msgstr ""
+
+#: php/token/class-bearer-validator.php:168
+msgid "The access token does not carry the required scope."
+msgstr ""
+
+#: php/token/class-service.php:86
+msgid "Only the authorization_code and refresh_token grants are supported."
+msgstr ""
+
+#: php/token/class-service.php:101
+msgid "The code parameter is required."
+msgstr ""
+
+#: php/token/class-service.php:107
+msgid "The authorization code is not valid."
+msgstr ""
+
+#: php/token/class-service.php:111
+msgid "The authorization code was issued to a different client."
+msgstr ""
+
+#: php/token/class-service.php:118
+#: php/token/class-service.php:151
+msgid "The authorization code has already been used."
+msgstr ""
+
+#: php/token/class-service.php:122
+msgid "The authorization code is expired or was never approved."
+msgstr ""
+
+#: php/token/class-service.php:128
+msgid "The redirect URI does not match the authorization request."
+msgstr ""
+
+#: php/token/class-service.php:134
+msgid "The resource does not match the authorization request."
+msgstr ""
+
+#: php/token/class-service.php:145
+msgid "The PKCE code verifier is not valid."
+msgstr ""
+
+#: php/token/class-service.php:157
+msgid "The authorization is not bound to a user."
+msgstr ""
+
+#: php/token/class-service.php:181
+msgid "This client may not use the refresh token grant."
+msgstr ""
+
+#: php/token/class-service.php:187
+msgid "The refresh_token parameter is required."
+msgstr ""
+
+#: php/token/class-service.php:193
+msgid "The refresh token is not valid."
+msgstr ""
+
+#: php/token/class-service.php:197
+msgid "The refresh token was issued to a different client."
+msgstr ""
+
+#: php/token/class-service.php:203
+#: php/token/class-service.php:234
+msgid "The refresh token has already been used."
+msgstr ""
+
+#: php/token/class-service.php:207
+msgid "The refresh token is expired or revoked."
+msgstr ""
+
+#: php/token/class-service.php:213
+msgid "The resource does not match the refresh token."
+msgstr ""
+
+#: php/token/class-service.php:224
+msgid "A refresh request may not add scopes."
+msgstr ""
+
+#: php/token/class-service.php:297
+msgid "The access token could not be stored."
+msgstr ""
+
+#: php/token/class-service.php:356
+msgid "The refresh token could not be stored."
+msgstr ""
+
+#: php/token/class-service.php:377
+msgid "The token parameter is required."
+msgstr ""
+
+#: php/token/class-service.php:428
+msgid "Too many token requests. Try again later."
+msgstr ""
+
+#: update-pilot.php:28
+msgid "OAuth Pilot requires the Update Pilot plugin for automatic updates."
+msgstr ""

@@ -1,0 +1,150 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "0a4d3fde2a1bf0f9d496c1b59d6eff5c",
+    "packages": [
+        {
+            "name": "nikic/php-parser",
+            "version": "v5.8.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nikic/PHP-Parser.git",
+                "reference": "044a6a392ff8ad0d61f14370a5fbbd0a0107152f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/044a6a392ff8ad0d61f14370a5fbbd0a0107152f",
+                "reference": "044a6a392ff8ad0d61f14370a5fbbd0a0107152f",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-tokenizer": "*",
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "ircmaxell/php-yacc": "^0.0.7",
+                "phpunit/phpunit": "^9.0"
+            },
+            "bin": [
+                "bin/php-parse"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "5.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PhpParser\\": "lib/PhpParser"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Nikita Popov"
+                }
+            ],
+            "description": "A PHP parser written in PHP",
+            "keywords": [
+                "parser",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/nikic/PHP-Parser/issues",
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.8.0"
+            },
+            "time": "2026-07-04T14:30:18+00:00"
+        },
+        {
+            "name": "wpelevator/update-client",
+            "version": "0.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/wpelevator/update-client.git",
+                "reference": "26ea168eedae7517bc1100f2a869013e9cfff62a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wpelevator/update-client/zipball/26ea168eedae7517bc1100f2a869013e9cfff62a",
+                "reference": "26ea168eedae7517bc1100f2a869013e9cfff62a",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "php/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "description": "Implement automatic updates for self-hosted WordPress plugins and themes",
+            "support": {
+                "source": "https://github.com/wpelevator/update-client/tree/0.4.0"
+            },
+            "time": "2026-08-11T13:39:52+00:00"
+        },
+        {
+            "name": "wpelevator/vendor-isolator",
+            "version": "0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/wpelevator/vendor-isolator.git",
+                "reference": "682fb4bfd0227675b054fc0d0cddf96b40d4ed7b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wpelevator/vendor-isolator/zipball/682fb4bfd0227675b054fc0d0cddf96b40d4ed7b",
+                "reference": "682fb4bfd0227675b054fc0d0cddf96b40d4ed7b",
+                "shasum": ""
+            },
+            "require": {
+                "composer-plugin-api": "^2.0",
+                "nikic/php-parser": "^5.0",
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "composer/composer": "^2.0"
+            },
+            "type": "composer-plugin",
+            "extra": {
+                "class": "WPElevator\\Vendor_Isolator\\Plugin"
+            },
+            "autoload": {
+                "classmap": [
+                    "php/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Composer plugin to isolate project dependencies by prefixing their namespace",
+            "support": {
+                "source": "https://github.com/wpelevator/vendor-isolator/tree/0.1.0"
+            },
+            "time": "2024-10-23T08:26:43+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "dev",
+    "stability-flags": {},
+    "prefer-stable": true,
+    "prefer-lowest": false,
+    "platform": {},
+    "platform-dev": {},
+    "platform-overrides": {
+        "php": "7.4"
+    },
+    "plugin-api-version": "2.9.0"
+}
