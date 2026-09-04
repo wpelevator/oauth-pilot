@@ -132,14 +132,22 @@ class Authentication {
 			return $result;
 		}
 
-		$resource_uri = rest_url();
+		/*
+		 * Prefer the most specific audience registered for this route. A plugin
+		 * that registers its own resource under wp-json — an MCP server with its
+		 * own scopes, say — owns the tokens for its own routes, and answering
+		 * for it here would reject every one of them as minted for a different
+		 * resource before the route ever ran.
+		 */
+		$matched = $this->resources->match_url( rest_url( ltrim( $route, '/' ) ) );
+
+		$resource_uri = $matched ? $matched->get_uri() : rest_url();
 
 		/**
 		 * Select the OAuth resource used to authenticate one REST route.
 		 *
-		 * The default is the shared WordPress REST API audience. Integrations may
-		 * select a more specific registered audience when a protocol requires the
-		 * route itself to be the token audience.
+		 * The default is the most specific registered audience covering the
+		 * route, falling back to the shared WordPress REST API audience.
 		 *
 		 * @param string $resource_uri The resource URI to authenticate against.
 		 * @param string $route        The current WordPress REST route.

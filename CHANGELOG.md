@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.4.0 (2026-09-04)
+
+- Fixed REST API authentication answering for routes that register their own protected resource, which rejected a valid token as issued for a different resource before the route ever ran. An MCP server nested under `wp-json` with its own scopes was unreachable with the very token OAuth Pilot had just minted for it, so a client completed consent and then failed on its first authenticated call. Authentication now resolves the deepest registered audience for the request URL and stands aside when that audience is not the shared REST one, leaving the route to authenticate its own tokens.
+- Fixed a token minted for the shared `wp:rest` audience establishing its user on a route belonging to a different registered audience.
+
 ## 0.3.0 (2026-09-04)
 
 - Fixed client registration refusing an entire client id metadata document because it advertised an extension grant this server does not implement, which blocked Claude and any other client whose published document lists `urn:ietf:params:oauth:grant-type:jwt-bearer`. Unsupported grants are now dropped and the supported ones kept, as RFC 7591 allows, and a client left without `authorization_code` is still refused.

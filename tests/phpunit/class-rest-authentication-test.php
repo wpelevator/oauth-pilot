@@ -4,6 +4,8 @@ namespace WPElevator\OAuth_Pilot_Tests;
 
 use WP_REST_Request;
 use WP_REST_Response;
+use WPElevator\OAuth_Pilot\Resources\Protected_Resources;
+use WPElevator\OAuth_Pilot\Resources\Scopes;
 use WPElevator\OAuth_Pilot\Token\Token;
 
 require_once __DIR__ . '/class-test-case.php';
@@ -161,6 +163,89 @@ class REST_Authentication_Test extends Test_Case {
 			$user_id,
 			get_current_user_id(),
 			'The route permission callback should see the WordPress user represented by the token.'
+		);
+	}
+
+	/**
+	 * Register a route nested under wp-json that owns its own audience and
+	 * scopes, the way an MCP server does, and mint a token for it.
+	 */
+	private function register_nested_resource( string $uri, string $scope ): void {
+		add_action(
+			'oauth_pilot__register_scopes',
+			function ( Scopes $scopes ) use ( $scope ) {
+				$scopes->register( [ 'name' => $scope ] );
+			}
+		);
+
+		add_action(
+			'oauth_pilot__register_resources',
+			function ( Protected_Resources $resources ) use ( $scope, $uri ) {
+				$resources->register(
+					[
+						'uri' => $uri,
+						'name' => 'Nested server with its own scopes',
+						'scopes' => [ $scope ],
+						'defaults' => [ $scope ],
+						'requires_resource' => true,
+					]
+				);
+			}
+		);
+
+		$this->plugin->get_scopes()->reset();
+		$this->plugin->get_resources()->reset();
+	}
+
+	public function test_a_route_with_its_own_audience_keeps_its_own_authentication() {
+		add_filter( 'oauth_pilot__enable_rest_authentication', '__return_true' );
+
+		$scope = 'nested:read';
+		$resource_uri = rest_url( 'nested/v1/mcp' );
+
+		$this->register_nested_resource( $resource_uri, $scope );
+
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+
+		$issued = $this->plugin->get_tokens()->issue(
+			[
+				'token_type' => Token::TYPE_ACCESS,
+				'client_id' => $this->create_public_client()->get_client_id(),
+				'user_id' => $user_id,
+				'scopes' => [ $scope ],
+				'resource' => $resource_uri,
+			]
+		);
+
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $issued['value'];
+		$this->set_route( '/nested/v1/mcp' );
+
+		$this->assertNull(
+			$this->plugin->get_rest_authentication()->filter_authenticate_bearer( null ),
+			'A route that registered its own audience owns the tokens minted for it, so the shared REST authentication must stand aside instead of rejecting them as issued for a different resource before the route ever runs.'
+		);
+	}
+
+	public function test_a_token_for_the_shared_audience_cannot_reach_a_nested_audience() {
+		add_filter( 'oauth_pilot__enable_rest_authentication', '__return_true' );
+
+		$this->register_nested_resource( rest_url( 'nested/v1/mcp' ), 'nested:read' );
+
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $this->issue_rest_token( $user_id, [ 'wp:rest' ] );
+		$this->set_route( '/nested/v1/mcp' );
+
+		$this->assertNull(
+			$this->plugin->get_rest_authentication()->filter_authenticate_bearer( null ),
+			'Standing aside must not authenticate the request either: a token for the shared REST audience is left for the nested route to refuse, rather than being accepted as that route\'s user.'
+		);
+
+		$this->assertSame(
+			0,
+			get_current_user_id(),
+			'A token minted for the shared REST audience must never establish a user on a route belonging to another audience.'
 		);
 	}
 
