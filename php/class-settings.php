@@ -64,10 +64,10 @@ class Settings {
 			],
 			'rest_authentication_enabled' => [
 				'type' => 'boolean',
-				// Off by default: an MCP scoped token must not reach the whole REST API
-				// before cross resource rejection has been proven on a real site.
+				// Off by default so activating OAuth Pilot does not automatically
+				// expand bearer authentication to every REST endpoint on the site.
 				'default' => false,
-				'description' => __( 'Whether an OAuth bearer token may authenticate ordinary WordPress REST requests.', 'wpelevator-oauth-pilot' ),
+				'description' => __( 'Whether an OAuth bearer token may authenticate requests to WordPress REST endpoints.', 'wpelevator-oauth-pilot' ),
 				'sanitize_callback' => [ $this, 'sanitize_bool' ],
 			],
 			'access_token_lifetime' => [

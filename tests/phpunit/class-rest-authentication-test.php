@@ -4,6 +4,7 @@ namespace WPElevator\OAuth_Pilot_Tests;
 
 use WP_REST_Request;
 use WP_REST_Response;
+use WPElevator\OAuth_Pilot\Token\Token;
 
 require_once __DIR__ . '/class-test-case.php';
 
@@ -14,13 +15,27 @@ require_once __DIR__ . '/class-test-case.php';
 class REST_Authentication_Test extends Test_Case {
 
 	public function tear_down() {
-		unset( $GLOBALS['wp']->query_vars['rest_route'] );
+		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REQUEST_METHOD'], $GLOBALS['wp']->query_vars['rest_route'] );
 
 		parent::tear_down();
 	}
 
 	private function set_route( string $route ): void {
 		$GLOBALS['wp']->query_vars['rest_route'] = $route;
+	}
+
+	private function issue_rest_token( int $user_id, array $scopes ): string {
+		$issued = $this->plugin->get_tokens()->issue(
+			[
+				'token_type' => Token::TYPE_ACCESS,
+				'client_id' => $this->create_public_client()->get_client_id(),
+				'user_id' => $user_id,
+				'scopes' => $scopes,
+				'resource' => $this->get_default_resource_uri(),
+			]
+		);
+
+		return $issued['value'];
 	}
 
 	/**
@@ -93,7 +108,7 @@ class REST_Authentication_Test extends Test_Case {
 	public function test_rest_bearer_authentication_is_off_by_default() {
 		$this->assertFalse(
 			$this->plugin->get_settings()->is_rest_authentication_enabled(),
-			'An MCP scoped token must not reach the whole REST API until a site opts in.'
+			'A REST access token must not reach the whole REST API until a site opts in.'
 		);
 
 		$this->assertNull(
@@ -102,28 +117,19 @@ class REST_Authentication_Test extends Test_Case {
 		);
 	}
 
-	public function test_required_scopes_follow_the_request_method() {
-		add_filter( 'oauth_pilot__enable_rest_authentication', '__return_true' );
-
+	public function test_rest_resource_uses_one_authentication_scope() {
 		$resource = $this->plugin->get_resources()->get( $this->get_default_resource_uri() );
 
-		$_SERVER['REQUEST_METHOD'] = 'GET';
-
 		$this->assertSame(
-			[ 'wp:read' ],
-			$this->plugin->get_rest_authentication()->get_required_scopes( $resource ),
-			'A safe method needs only read access.'
+			[ 'wp:rest' ],
+			$resource->get_scopes(),
+			'The generic REST audience should express authentication without pretending to classify endpoint permissions.'
 		);
-
-		$_SERVER['REQUEST_METHOD'] = 'POST';
-
 		$this->assertSame(
-			[ 'wp:write' ],
-			$this->plugin->get_rest_authentication()->get_required_scopes( $resource ),
-			'A mutating method needs write access.'
+			[ 'wp:rest' ],
+			$resource->get_default_scopes(),
+			'A client that omits scope should receive the authentication scope needed to connect.'
 		);
-
-		$_SERVER['REQUEST_METHOD'] = 'GET';
 	}
 
 	public function test_existing_authentication_is_never_overridden() {
@@ -139,10 +145,29 @@ class REST_Authentication_Test extends Test_Case {
 		);
 	}
 
+	public function test_bearer_authentication_is_agnostic_to_the_rest_route_owner() {
+		add_filter( 'oauth_pilot__enable_rest_authentication', '__return_true' );
+
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $this->issue_rest_token( $user_id, [ 'wp:rest' ] );
+		$this->set_route( '/third-party/v1/endpoint' );
+
+		$this->assertTrue(
+			$this->plugin->get_rest_authentication()->filter_authenticate_bearer( null ),
+			'A valid token should authenticate a REST route without OAuth Pilot knowing which plugin registered it.'
+		);
+		$this->assertSame(
+			$user_id,
+			get_current_user_id(),
+			'The route permission callback should see the WordPress user represented by the token.'
+		);
+	}
+
 	public function test_anonymous_protected_route_advertises_resource_metadata_on_authentication_errors() {
 		add_filter( 'oauth_pilot__enable_rest_authentication', '__return_true' );
 
-		$this->set_route( '/wp/v2/users/me' );
+		$this->set_route( '/third-party/v1/endpoint' );
 
 		$this->assertNull(
 			$this->plugin->get_rest_authentication()->filter_authenticate_bearer( null ),
@@ -152,7 +177,7 @@ class REST_Authentication_Test extends Test_Case {
 		$response = $this->plugin->get_rest_authentication()->filter_add_challenge_header(
 			new WP_REST_Response( null, 401 ),
 			rest_get_server(),
-			new WP_REST_Request( 'GET', '/wp/v2/users/me' )
+			new WP_REST_Request( 'GET', '/third-party/v1/endpoint' )
 		);
 		$headers = $response->get_headers();
 		$resource = $this->plugin->get_resources()->get( $this->get_default_resource_uri() );
@@ -185,6 +210,28 @@ class REST_Authentication_Test extends Test_Case {
 			'WWW-Authenticate',
 			$response->get_headers(),
 			'A public response must not be presented as an OAuth authentication failure.'
+		);
+	}
+
+	public function test_a_challenge_is_not_reused_after_rest_authentication_is_disabled() {
+		add_filter( 'oauth_pilot__enable_rest_authentication', '__return_true' );
+
+		$this->set_route( '/third-party/v1/endpoint' );
+		$this->plugin->get_rest_authentication()->filter_authenticate_bearer( null );
+
+		remove_filter( 'oauth_pilot__enable_rest_authentication', '__return_true' );
+		$this->plugin->get_rest_authentication()->filter_authenticate_bearer( null );
+
+		$response = $this->plugin->get_rest_authentication()->filter_add_challenge_header(
+			new WP_REST_Response( null, 401 ),
+			rest_get_server(),
+			new WP_REST_Request( 'GET', '/third-party/v1/endpoint' )
+		);
+
+		$this->assertArrayNotHasKey(
+			'WWW-Authenticate',
+			$response->get_headers(),
+			'The generic OAuth challenge must be advertised only while REST API authentication is enabled.'
 		);
 	}
 }

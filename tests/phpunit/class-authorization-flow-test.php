@@ -5,6 +5,8 @@ namespace WPElevator\OAuth_Pilot_Tests;
 use WPElevator\OAuth_Pilot\Authorization\PKCE;
 use WPElevator\OAuth_Pilot\Client\Client;
 use WPElevator\OAuth_Pilot\Random;
+use WPElevator\OAuth_Pilot\Resources\Protected_Resources;
+use WPElevator\OAuth_Pilot\Resources\Scopes;
 use WPElevator\OAuth_Pilot\Token\Token;
 use WP_REST_Request;
 
@@ -33,7 +35,7 @@ class Authorization_Flow_Test extends Test_Case {
 				'code_challenge' => PKCE::challenge_for( $verifier ),
 				'code_challenge_method' => 'S256',
 				'resource' => $this->get_default_resource_uri(),
-				'scope' => 'wp:read',
+				'scope' => 'wp:rest',
 			],
 			$overrides
 		);
@@ -159,7 +161,7 @@ class Authorization_Flow_Test extends Test_Case {
 
 		$this->assertNotEmpty( $data['access_token'], 'The exchange must return an access token.' );
 		$this->assertSame( 'Bearer', $data['token_type'], 'Only bearer tokens are issued.' );
-		$this->assertSame( 'wp:read', $data['scope'], 'The response must state the exact granted scope set.' );
+		$this->assertSame( 'wp:rest', $data['scope'], 'The response must state the exact granted scope set.' );
 		$this->assertSame( $this->get_default_resource_uri(), $data['resource'], 'The token audience is reported back for interoperability.' );
 
 		$this->assertNotEmpty(
@@ -342,9 +344,50 @@ class Authorization_Flow_Test extends Test_Case {
 	}
 
 	public function test_refresh_may_narrow_but_not_widen_the_grant() {
+		$resource_uri = rest_url( 'scope-test/v1' );
+		$read_scope = 'scope-test:read';
+		$write_scope = 'scope-test:write';
+
+		add_action(
+			'oauth_pilot__register_scopes',
+			function ( Scopes $scopes ) use ( $read_scope, $write_scope ) {
+				$scopes->register( [ 'name' => $read_scope ] );
+				$scopes->register(
+					[
+						'name' => $write_scope,
+						'implies' => [ $read_scope ],
+					]
+				);
+			}
+		);
+
+		add_action(
+			'oauth_pilot__register_resources',
+			function ( Protected_Resources $resources ) use ( $read_scope, $resource_uri, $write_scope ) {
+				$resources->register(
+					[
+						'uri' => $resource_uri,
+						'name' => 'Scope test resource',
+						'scopes' => [ $read_scope, $write_scope ],
+						'defaults' => [ $read_scope ],
+						'requires_resource' => true,
+					]
+				);
+			}
+		);
+		$this->plugin->get_scopes()->reset();
+		$this->plugin->get_resources()->reset();
+
 		$client = $this->create_public_client();
 		$verifier = Random::credential();
-		$approved = $this->complete_authorization( $client, $verifier, [ 'scope' => 'wp:write' ] );
+		$approved = $this->complete_authorization(
+			$client,
+			$verifier,
+			[
+				'resource' => $resource_uri,
+				'scope' => $write_scope,
+			]
+		);
 
 		$issued = $this->post_form(
 			'/oauth-pilot/v1/token',
@@ -363,11 +406,11 @@ class Authorization_Flow_Test extends Test_Case {
 				'grant_type' => 'refresh_token',
 				'refresh_token' => $issued['refresh_token'],
 				'client_id' => $client->get_client_id(),
-				'scope' => 'wp:read',
+				'scope' => $read_scope,
 			]
 		);
 
-		$this->assertSame( 'wp:read', $narrowed->get_data()['scope'], 'A client may ask for less than it was granted.' );
+		$this->assertSame( $read_scope, $narrowed->get_data()['scope'], 'A client may ask for less than it was granted.' );
 
 		$widened = $this->post_form(
 			'/oauth-pilot/v1/token',
@@ -375,7 +418,7 @@ class Authorization_Flow_Test extends Test_Case {
 				'grant_type' => 'refresh_token',
 				'refresh_token' => $narrowed->get_data()['refresh_token'],
 				'client_id' => $client->get_client_id(),
-				'scope' => 'wp:write',
+				'scope' => $write_scope,
 			]
 		);
 

@@ -6,10 +6,7 @@ namespace WPElevator\OAuth_Pilot;
  * Service composition and WordPress wiring.
  */
 class Plugin {
-
-	public const SCOPE_READ = 'wp:read';
-
-	public const SCOPE_WRITE = 'wp:write';
+	public const SCOPE_REST = 'wp:rest';
 
 	private string $plugin_file;
 
@@ -48,6 +45,8 @@ class Plugin {
 	private Rest\Controller $rest_controller;
 
 	private Rest\Authentication $rest_authentication;
+
+	private Integrations\MCP_Adapter $mcp_adapter_integration;
 
 	private Authorization\Consent $consent_controller;
 
@@ -121,6 +120,7 @@ class Plugin {
 		);
 
 		$this->rest_authentication = new Rest\Authentication( $this->validator, $this->resources, $this->settings );
+		$this->mcp_adapter_integration = new Integrations\MCP_Adapter( $this->settings );
 
 		$this->consent_controller = new Authorization\Consent(
 			$this->authorizations,
@@ -153,6 +153,7 @@ class Plugin {
 		$this->discovery->init();
 		$this->rest_controller->init();
 		$this->rest_authentication->init();
+		$this->mcp_adapter_integration->init();
 		$this->consent_controller->init();
 		$this->cleanup->init();
 		$this->admin->init();
@@ -174,8 +175,8 @@ class Plugin {
 			[
 				'uri' => rest_url(),
 				'name' => __( 'WordPress REST API', 'wpelevator-oauth-pilot' ),
-				'scopes' => [ self::SCOPE_READ, self::SCOPE_WRITE ],
-				'defaults' => [ self::SCOPE_READ ],
+				'scopes' => [ self::SCOPE_REST ],
+				'defaults' => [ self::SCOPE_REST ],
 			]
 		);
 	}
@@ -183,20 +184,10 @@ class Plugin {
 	public function action_register_default_scopes( Resources\Scopes $scopes ): void {
 		$scopes->register(
 			[
-				'name' => self::SCOPE_READ,
-				'label' => __( 'Read content', 'wpelevator-oauth-pilot' ),
-				'description' => __( 'Read data you can already read on this site.', 'wpelevator-oauth-pilot' ),
+				'name' => self::SCOPE_REST,
+				'label' => __( 'Use the WordPress REST API', 'wpelevator-oauth-pilot' ),
+				'description' => __( 'Use REST endpoints with the same permissions as your WordPress account.', 'wpelevator-oauth-pilot' ),
 				'user_can_grant' => fn ( int $user_id ): bool => user_can( $user_id, 'read' ),
-			]
-		);
-
-		$scopes->register(
-			[
-				'name' => self::SCOPE_WRITE,
-				'label' => __( 'Create and edit content', 'wpelevator-oauth-pilot' ),
-				'description' => __( 'Create, edit and delete data you can already change on this site.', 'wpelevator-oauth-pilot' ),
-				'implies' => [ self::SCOPE_READ ],
-				'user_can_grant' => fn ( int $user_id ): bool => user_can( $user_id, 'edit_posts' ),
 			]
 		);
 	}

@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the OAuth Pilot plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: OAuth Pilot 0.1.0\n"
+"Project-Id-Version: OAuth Pilot 0.2.0\n"
 "Report-Msgid-Bugs-To: https://github.com/wpelevator/basement\n"
 "Last-Translator: support@wpelevator.com\n"
 "Language-Team: support@wpelevator.com\n"
@@ -153,7 +153,7 @@ msgid "You are not allowed to revoke this authorization."
 msgstr ""
 
 #: php/admin/class-screen.php:66
-#: php/class-plugin.php:225
+#: php/class-plugin.php:216
 msgid "Settings"
 msgstr ""
 
@@ -227,7 +227,7 @@ msgid "REST API authentication"
 msgstr ""
 
 #: php/admin/class-screen.php:252
-msgid "Accept OAuth bearer tokens for the WordPress REST API. Endpoint capability checks still apply."
+msgid "Accept OAuth bearer tokens on all WordPress REST endpoints, including endpoints registered by plugins. Endpoint permission checks still apply."
 msgstr ""
 
 #: php/admin/class-screen.php:257
@@ -447,24 +447,16 @@ msgstr ""
 msgid "A resource parameter is required because this server has no default resource."
 msgstr ""
 
-#: php/class-plugin.php:176
+#: php/class-plugin.php:177
 msgid "WordPress REST API"
 msgstr ""
 
-#: php/class-plugin.php:187
-msgid "Read content"
-msgstr ""
-
 #: php/class-plugin.php:188
-msgid "Read data you can already read on this site."
+msgid "Use the WordPress REST API"
 msgstr ""
 
-#: php/class-plugin.php:196
-msgid "Create and edit content"
-msgstr ""
-
-#: php/class-plugin.php:197
-msgid "Create, edit and delete data you can already change on this site."
+#: php/class-plugin.php:189
+msgid "Use REST endpoints with the same permissions as your WordPress account."
 msgstr ""
 
 #: php/class-settings.php:50
@@ -480,7 +472,7 @@ msgid "Newline separated redirect URI hosts dynamic registration accepts. Empty 
 msgstr ""
 
 #: php/class-settings.php:70
-msgid "Whether an OAuth bearer token may authenticate ordinary WordPress REST requests."
+msgid "Whether an OAuth bearer token may authenticate requests to WordPress REST endpoints."
 msgstr ""
 
 #: php/class-settings.php:76
@@ -656,6 +648,12 @@ msgstr ""
 msgid "Repeated request parameters are not accepted: %s"
 msgstr ""
 
+#. translators: %s: the MCP Adapter server route.
+#: php/integrations/class-mcp-adapter.php:46
+#, php-format
+msgid "MCP Adapter server: %s"
+msgstr ""
+
 #: php/resources/class-scopes.php:113
 msgid "The requested scope is malformed."
 msgstr ""
@@ -684,10 +682,6 @@ msgstr ""
 #: php/resources/class-scopes.php:235
 #, php-format
 msgid "The client is not allowed to request the scope: %s"
-msgstr ""
-
-#: php/rest/class-authentication.php:151
-msgid "This REST resource has no OAuth scope mapping."
 msgstr ""
 
 #: php/rest/class-controller.php:108

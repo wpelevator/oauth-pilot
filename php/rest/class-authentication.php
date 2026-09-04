@@ -3,12 +3,10 @@
 namespace WPElevator\OAuth_Pilot\Rest;
 
 use WP_HTTP_Response;
-use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 use WPElevator\OAuth_Pilot\Plugin;
-use WPElevator\OAuth_Pilot\Resources\Protected_Resource;
 use WPElevator\OAuth_Pilot\Resources\Protected_Resources;
 use WPElevator\OAuth_Pilot\Server_Urls;
 use WPElevator\OAuth_Pilot\Settings;
@@ -19,8 +17,9 @@ use WPElevator\OAuth_Pilot\Token\Bearer_Validator;
  *
  * First, the OAuth protocol routes are isolated from WordPress request
  * authentication: cookies and Application Passwords must not decide anything
- * there. Second, when the site enables it, bearer tokens authenticate ordinary
- * WordPress REST requests.
+ * there. Second, when the site enables it, bearer tokens authenticate any
+ * non-protocol WordPress REST request without knowing which component
+ * registered the route.
  */
 class Authentication {
 
@@ -111,6 +110,10 @@ class Authentication {
 	 * @return mixed
 	 */
 	public function filter_authenticate_bearer( $result ) {
+		// This service can outlive one request under tests, WP-CLI and persistent
+		// application servers. A challenge belongs only to the current request.
+		$this->challenge = null;
+
 		if ( ! empty( $result ) ) {
 			return $result; // Another mechanism already decided.
 		}
@@ -129,11 +132,22 @@ class Authentication {
 			return $result;
 		}
 
-		$url = rest_url( $route );
-		$resource = $this->resources->match_url( $url );
-		$wordpress_resource = $this->resources->get( rest_url() );
+		$resource_uri = rest_url();
 
-		if ( ! $resource || ! $wordpress_resource || $resource->get_uri() !== $wordpress_resource->get_uri() ) {
+		/**
+		 * Select the OAuth resource used to authenticate one REST route.
+		 *
+		 * The default is the shared WordPress REST API audience. Integrations may
+		 * select a more specific registered audience when a protocol requires the
+		 * route itself to be the token audience.
+		 *
+		 * @param string $resource_uri The resource URI to authenticate against.
+		 * @param string $route        The current WordPress REST route.
+		 */
+		$resource_uri = (string) apply_filters( 'oauth_pilot__rest_authentication_resource_uri', $resource_uri, $route );
+		$resource = $this->resources->get( $resource_uri );
+
+		if ( ! $resource || ! in_array( Plugin::SCOPE_REST, $resource->get_scopes(), true ) ) {
 			return $result;
 		}
 
@@ -143,17 +157,7 @@ class Authentication {
 			return $result;
 		}
 
-		$required = $this->get_required_scopes( $resource );
-
-		if ( empty( $required ) ) {
-			return new WP_Error(
-				'oauth_pilot_missing_rest_scope_mapping',
-				__( 'This REST resource has no OAuth scope mapping.', 'wpelevator-oauth-pilot' ),
-				[ 'status' => 403 ]
-			);
-		}
-
-		$context = $this->validator->validate_request( $resource->get_uri(), $required );
+		$context = $this->validator->validate_request( $resource->get_uri(), [ Plugin::SCOPE_REST ] );
 
 		if ( is_wp_error( $context ) ) {
 			$this->challenge = (string) ( $context->get_error_data()['www_authenticate'] ?? '' );
@@ -165,30 +169,6 @@ class Authentication {
 		wp_set_current_user( $context->get_user_id() );
 
 		return true;
-	}
-
-	/**
-	 * The scopes a REST request needs, derived from its HTTP method.
-	 */
-	public function get_required_scopes( Protected_Resource $protected_resource ): array {
-		$method = isset( $_SERVER['REQUEST_METHOD'] )
-			? strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) )
-			: 'GET';
-
-		$required = in_array( $method, [ 'GET', 'HEAD', 'OPTIONS' ], true )
-			? [ Plugin::SCOPE_READ ]
-			: [ Plugin::SCOPE_WRITE ];
-
-		$required = array_values( array_intersect( $required, $protected_resource->get_scopes() ) );
-
-		/**
-		 * Map a WordPress REST request to the scopes it requires.
-		 *
-		 * @param array              $required The required scopes.
-		 * @param Protected_Resource $protected_resource The matched resource.
-		 * @param string             $method   The request method.
-		 */
-		return (array) apply_filters( 'oauth_pilot__rest_required_scopes', $required, $protected_resource, $method );
 	}
 
 	/**

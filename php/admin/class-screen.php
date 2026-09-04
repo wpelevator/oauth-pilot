@@ -249,7 +249,7 @@ class Screen {
 						<label>
 							<input type="hidden" name="<?php echo esc_attr( $settings->get_option_name( 'rest_authentication_enabled' ) ); ?>" value="0" />
 							<input type="checkbox" name="<?php echo esc_attr( $settings->get_option_name( 'rest_authentication_enabled' ) ); ?>" value="1" <?php checked( (bool) $settings->get( 'rest_authentication_enabled' ) ); ?> />
-							<?php esc_html_e( 'Accept OAuth bearer tokens for the WordPress REST API. Endpoint capability checks still apply.', 'wpelevator-oauth-pilot' ); ?>
+							<?php esc_html_e( 'Accept OAuth bearer tokens on all WordPress REST endpoints, including endpoints registered by plugins. Endpoint permission checks still apply.', 'wpelevator-oauth-pilot' ); ?>
 						</label>
 					</td>
 				</tr>

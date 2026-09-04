@@ -86,7 +86,7 @@ abstract class Test_Case extends \WP_UnitTestCase {
 				'code_challenge' => PKCE::challenge_for( $verifier ),
 				'code_challenge_method' => 'S256',
 				'resource' => $this->get_default_resource_uri(),
-				'scope' => 'wp:read',
+				'scope' => 'wp:rest',
 			],
 			$overrides
 		);

@@ -189,11 +189,19 @@ $user_id = $context->get_user_id();
 
 `Token\Context` exposes the client ID, user ID, resource, scopes, token ID and expiry, plus `has_scope()` and `has_scopes()`. It never exposes the raw token.
 
-Because audiences are compared exactly, a token minted for the WordPress REST API cannot be used against an MCP endpoint nested under `wp-json`, and vice versa. When several registered resources match a URL, the most specific path wins.
+Because audiences are compared exactly, a token minted for the WordPress REST API cannot be used against an MCP endpoint that registers itself as a separate resource, and vice versa. When several registered resources match a URL, the most specific path wins.
 
 ## Public API
 
 Services are reached through the namespaced `WPElevator\OAuth_Pilot\plugin()` singleton. OAuth Pilot declares no global functions. `plugin()->get_validator()` returns the `Token\Bearer_Validator` with `validate_request()`, `validate_token()` and `get_challenge()`; `plugin()->get_clients()`, `get_tokens()`, `get_resources()` and `get_scopes()` expose the repositories and registries.
+
+### REST API authentication
+
+Enabling **REST API authentication** makes OAuth Pilot accept bearer tokens on every non-protocol WordPress REST endpoint, including routes registered by plugins. The authentication layer resolves only the request URL. A valid token establishes its represented WordPress user, after which the endpoint's normal permission callback and capability checks still decide whether the request is allowed.
+
+Anonymous `401` and `403` responses advertise the canonical WordPress REST resource metadata URL in `WWW-Authenticate`, and expose that header to browser clients. The resource has one scope, `wp:rest`, meaning “use the WordPress REST API as this user.” It authenticates the represented account but grants no capability by itself; every endpoint still authorizes the request through its normal permission callback. This avoids guessing intent from the HTTP method, since extensible APIs can multiplex read and write operations through the same method. The setting is off by default.
+
+When the official [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active, OAuth Pilot discovers the registered REST endpoints handled by its HTTP transports and gives each route an endpoint-specific protected resource using the same `wp:rest` scope. This detects custom routes through MCP Adapter's public REST transport contract without treating non-HTTP servers as REST resources. An MCP client connecting to `/wp-json/mcp/mcp-adapter-default-server` therefore receives metadata naming that exact URL as its resource, and a token for the shared `/wp-json/` audience cannot be replayed against it. OAuth Pilot only supplies authentication; MCP Adapter's transport capability check and each ability's permission callback remain the authorization layer. Agent Pilot is not involved.
 
 ### Settings
 
@@ -224,7 +232,7 @@ The filters below take precedence over the stored values, so infrastructure can 
 | `oauth_pilot__issue_refresh_token` | Opt out of issuing a refresh token for one grant. |
 | `oauth_pilot__authorization_code_lifetime` | Authorization code TTL. |
 | `oauth_pilot__admin_capability` | The capability required to manage the server. |
-| `oauth_pilot__enable_rest_authentication` | Enable bearer authentication for the WordPress REST API. Off by default. |
+| `oauth_pilot__enable_rest_authentication` | Enable bearer authentication for all non-protocol WordPress REST endpoints. Off by default. |
 | `oauth_pilot__cimd_enabled` | Turn Client ID Metadata Document resolution off while keeping DCR and static clients. On by default. |
 
 ### Registry and policy hooks
@@ -233,6 +241,8 @@ The filters below take precedence over the stored values, so infrastructure can 
 | --- | --- |
 | `oauth_pilot__register_resources` | Register protected resources. |
 | `oauth_pilot__protected_resources` | Filter the final resource list. |
+| `oauth_pilot__rest_authentication_resource_uri` | Select the registered resource used to authenticate one REST route. Defaults to the shared WordPress REST resource. |
+| `oauth_pilot__mcp_adapter_routes` | Adjust the MCP Adapter route-to-resource map discovered by the optional integration. |
 | `oauth_pilot__register_scopes` | Register scope definitions. |
 | `oauth_pilot__scopes` | Filter the final scope definitions. |
 | `oauth_pilot__user_can_grant_scope` | Contextual policy after a scope's own callback. |
@@ -246,7 +256,6 @@ The filters below take precedence over the stored values, so infrastructure can 
 | `oauth_pilot__cimd_resolved_ips` | Override DNS resolution for a metadata document host. Development and testing only; production must leave it returning null. |
 | `oauth_pilot__cimd_url_allowed` | Short-circuit the network checks for one metadata document URL. Development and testing only; production must leave it returning false. |
 | `oauth_pilot__client_registration_metadata` | Filter normalized registration metadata before it is stored. |
-| `oauth_pilot__rest_required_scopes` | Map a REST request to the scopes it requires. |
 | `oauth_pilot__rate_limit_allowed` | Override a rate limit decision, or plug in another backend. |
 
 ### Metadata and response filters
