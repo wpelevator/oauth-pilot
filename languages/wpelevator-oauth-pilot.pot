@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the OAuth Pilot plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: OAuth Pilot 0.2.1\n"
+"Project-Id-Version: OAuth Pilot 0.4.0\n"
 "Report-Msgid-Bugs-To: https://github.com/wpelevator/basement\n"
 "Last-Translator: support@wpelevator.com\n"
 "Language-Team: support@wpelevator.com\n"
@@ -415,7 +415,6 @@ msgid "This client may not use the authorization code grant."
 msgstr ""
 
 #: php/authorization/class-service.php:119
-#: php/client/class-registration.php:414
 msgid "Only the code response type is supported."
 msgstr ""
 
@@ -619,26 +618,24 @@ msgstr ""
 msgid "Duplicate redirect URIs are not accepted."
 msgstr ""
 
-#: php/client/class-registration.php:372
+#: php/client/class-registration.php:383
 msgid "The grant_types value must be an array."
 msgstr ""
 
-#. translators: %s: the requested grant type.
-#: php/client/class-registration.php:383
-#, php-format
-msgid "Unsupported grant type: %s"
-msgstr ""
-
-#: php/client/class-registration.php:394
+#: php/client/class-registration.php:396
 msgid "The authorization_code grant is required."
 msgstr ""
 
-#: php/client/class-registration.php:430
+#: php/client/class-registration.php:425
+msgid "The code response type is required."
+msgstr ""
+
+#: php/client/class-registration.php:440
 msgid "This site has reached its dynamic client registration limit."
 msgstr ""
 
-#: php/client/class-registration.php:442
 #: php/client/class-registration.php:452
+#: php/client/class-registration.php:462
 msgid "Too many registration attempts. Try again later."
 msgstr ""
 
@@ -662,26 +659,18 @@ msgstr ""
 msgid "The requested scope contains duplicates."
 msgstr ""
 
-#: php/resources/class-scopes.php:201
+#: php/resources/class-scopes.php:212
 msgid "No scopes were requested and the resource has no default scopes."
 msgstr ""
 
-#. translators: %s: the requested scope name.
-#: php/resources/class-scopes.php:213
-#, php-format
-msgid "Unknown scope: %s"
+#: php/resources/class-scopes.php:229
+msgid "None of the requested scopes can be granted."
 msgstr ""
 
-#. translators: %s: the requested scope name.
-#: php/resources/class-scopes.php:224
+#. translators: %s: the space separated scopes the resource supports.
+#: php/resources/class-scopes.php:232
 #, php-format
-msgid "The requested resource does not support the scope: %s"
-msgstr ""
-
-#. translators: %s: the requested scope name.
-#: php/resources/class-scopes.php:235
-#, php-format
-msgid "The client is not allowed to request the scope: %s"
+msgid "None of the requested scopes can be granted for this resource, which supports: %s"
 msgstr ""
 
 #: php/rest/class-controller.php:108
@@ -790,7 +779,7 @@ msgid "The refresh token was issued to a different client."
 msgstr ""
 
 #: php/token/class-service.php:203
-#: php/token/class-service.php:234
+#: php/token/class-service.php:250
 msgid "The refresh token has already been used."
 msgstr ""
 
@@ -802,23 +791,23 @@ msgstr ""
 msgid "The resource does not match the refresh token."
 msgstr ""
 
-#: php/token/class-service.php:224
+#: php/token/class-service.php:237
 msgid "A refresh request may not add scopes."
 msgstr ""
 
-#: php/token/class-service.php:297
+#: php/token/class-service.php:313
 msgid "The access token could not be stored."
 msgstr ""
 
-#: php/token/class-service.php:356
+#: php/token/class-service.php:372
 msgid "The refresh token could not be stored."
 msgstr ""
 
-#: php/token/class-service.php:377
+#: php/token/class-service.php:393
 msgid "The token parameter is required."
 msgstr ""
 
-#: php/token/class-service.php:428
+#: php/token/class-service.php:444
 msgid "Too many token requests. Try again later."
 msgstr ""
 
