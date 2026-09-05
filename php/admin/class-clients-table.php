@@ -151,7 +151,7 @@ class Clients_Table extends WP_List_Table {
 
 				return $item->is_dynamic()
 					? esc_html__( 'Dynamically', 'wpelevator-oauth-pilot' )
-					: esc_html__( 'By an administrator', 'wpelevator-oauth-pilot' );
+					: $this->get_owner_label( $item );
 
 			case 'blog':
 				$blog_id = $item->get_blog_id();
@@ -196,5 +196,38 @@ class Clients_Table extends WP_List_Table {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Who registered a client an administrator created by hand.
+	 *
+	 * Only this source records an owner: a dynamic registration has no user
+	 * behind it, and a metadata document publishes itself. The owner can also
+	 * be missing here, when the account has since been deleted or when the
+	 * registration came from WP-CLI without --user, so the anonymous label
+	 * remains the fallback rather than an error.
+	 */
+	private function get_owner_label( Client $item ): string {
+		$owner_id = $item->get_owner_user_id();
+		$owner = empty( $owner_id ) ? null : get_userdata( $owner_id );
+
+		if ( empty( $owner ) ) {
+			return esc_html__( 'By an administrator', 'wpelevator-oauth-pilot' );
+		}
+
+		// Returns an empty string when the viewer may not edit that account,
+		// which on a network is how a client registered elsewhere stops
+		// offering a link into another site's user.
+		$edit_url = get_edit_user_link( $owner->ID );
+
+		$name = empty( $edit_url )
+			? esc_html( $owner->display_name )
+			: sprintf( '<a href="%s">%s</a>', esc_url( $edit_url ), esc_html( $owner->display_name ) );
+
+		return sprintf(
+			/* translators: %s: the display name of the administrator who registered the client. */
+			esc_html__( 'By %s', 'wpelevator-oauth-pilot' ),
+			$name
+		);
 	}
 }

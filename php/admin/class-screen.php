@@ -44,8 +44,15 @@ class Screen {
 		add_filter( 'option_page_capability_oauth_pilot', [ $this, 'filter_settings_capability' ] );
 	}
 
-	public function filter_settings_capability(): string {
+	/**
+	 * The capability that guards this screen and everything that links to it.
+	 */
+	public function get_capability(): string {
 		return $this->plugin->get_admin_capability();
+	}
+
+	public function filter_settings_capability(): string {
+		return $this->get_capability();
 	}
 
 	public function get_settings_url( string $tab = '' ): string {
@@ -93,7 +100,7 @@ class Screen {
 		add_options_page(
 			__( 'OAuth Pilot', 'wpelevator-oauth-pilot' ),
 			__( 'OAuth Pilot', 'wpelevator-oauth-pilot' ),
-			$this->plugin->get_admin_capability(),
+			$this->get_capability(),
 			self::SLUG,
 			[ $this, 'render_settings_page' ]
 		);
@@ -166,7 +173,7 @@ class Screen {
 	}
 
 	public function render_settings_page(): void {
-		if ( ! current_user_can( $this->plugin->get_admin_capability() ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_die( esc_html__( 'You are not allowed to manage OAuth Pilot.', 'wpelevator-oauth-pilot' ) );
 		}
 
@@ -444,7 +451,7 @@ class Screen {
 	}
 
 	private function assert_can_manage(): void {
-		if ( ! current_user_can( $this->plugin->get_admin_capability() ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_die( esc_html__( 'You are not allowed to manage OAuth Pilot.', 'wpelevator-oauth-pilot' ) );
 		}
 	}

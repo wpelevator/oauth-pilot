@@ -8,6 +8,24 @@ require_once __DIR__ . '/class-test-case.php';
 
 class Tokens_Test extends Test_Case {
 
+	/**
+	 * Rewrite a stored row directly, which is the only way to reach the states
+	 * that would otherwise take an hour or a month of wall clock to produce.
+	 */
+	private function set_row( int $token_id, array $data ): void {
+		global $wpdb;
+
+		$wpdb->update( $this->plugin->get_tokens()->get_table_name(), $data, [ 'id' => $token_id ] );
+	}
+
+	private function expire( int $token_id ): void {
+		$this->set_row( $token_id, [ 'expires_at' => gmdate( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS ) ] );
+	}
+
+	private function get_state( int $token_id ): string {
+		return $this->plugin->get_tokens()->get_by_id( $token_id )->get_state();
+	}
+
 	private function issue( array $args = [] ): array {
 		return $this->plugin->get_tokens()->issue(
 			array_merge(
@@ -206,6 +224,166 @@ class Tokens_Test extends Test_Case {
 			$after_first->get_last_used_at(),
 			$this->plugin->get_tokens()->get_by_id( $issued['token']->get_id() )->get_last_used_at(),
 			'A second use inside the throttle window must not write again.'
+		);
+	}
+
+	public function test_a_fresh_token_reads_as_active() {
+		$issued = $this->issue();
+
+		$this->assertSame( Token::STATE_ACTIVE, $issued['token']->get_state() );
+	}
+
+	public function test_an_expired_token_reads_as_expired() {
+		$issued = $this->issue();
+
+		$this->expire( $issued['token']->get_id() );
+
+		$this->assertSame( Token::STATE_EXPIRED, $this->get_state( $issued['token']->get_id() ) );
+	}
+
+	public function test_a_rotated_refresh_token_reads_as_consumed() {
+		$issued = $this->issue( [ 'token_type' => Token::TYPE_REFRESH ] );
+
+		$this->plugin->get_tokens()->consume_refresh_token( $issued['token'] );
+
+		$this->assertSame( Token::STATE_CONSUMED, $this->get_state( $issued['token']->get_id() ) );
+	}
+
+	public function test_revocation_outranks_consumption() {
+		$issued = $this->issue( [ 'token_type' => Token::TYPE_REFRESH ] );
+
+		$this->plugin->get_tokens()->consume_refresh_token( $issued['token'] );
+		$this->plugin->get_tokens()->revoke_family( $issued['token']->get_family_id() );
+
+		$this->assertSame(
+			Token::STATE_REVOKED,
+			$this->get_state( $issued['token']->get_id() ),
+			'A consumed token whose family was revoked is a security relevant row, not rotation history.'
+		);
+	}
+
+	public function test_revocation_outranks_expiry() {
+		$issued = $this->issue();
+
+		$this->plugin->get_tokens()->revoke( $issued['token'] );
+		$this->expire( $issued['token']->get_id() );
+
+		$this->assertSame( Token::STATE_REVOKED, $this->get_state( $issued['token']->get_id() ) );
+	}
+
+	public function test_consumption_outranks_expiry() {
+		$issued = $this->issue( [ 'token_type' => Token::TYPE_REFRESH ] );
+
+		$this->plugin->get_tokens()->consume_refresh_token( $issued['token'] );
+		$this->expire( $issued['token']->get_id() );
+
+		$this->assertSame( Token::STATE_CONSUMED, $this->get_state( $issued['token']->get_id() ) );
+	}
+
+	public function test_active_only_excludes_every_unusable_state() {
+		$user_id = self::factory()->user->create();
+
+		$active = $this->issue( [ 'user_id' => $user_id ] );
+		$expired = $this->issue( [ 'user_id' => $user_id ] );
+		$revoked = $this->issue( [ 'user_id' => $user_id ] );
+		$consumed = $this->issue(
+			[
+				'user_id' => $user_id,
+				'token_type' => Token::TYPE_REFRESH,
+			]
+		);
+
+		$this->expire( $expired['token']->get_id() );
+		$this->plugin->get_tokens()->revoke( $revoked['token'] );
+		$this->plugin->get_tokens()->consume_refresh_token( $consumed['token'] );
+
+		$found = $this->plugin->get_tokens()->find_for_user( $user_id, [ 'active_only' => true ] );
+
+		$this->assertSame(
+			[ $active['token']->get_id() ],
+			array_map( fn ( Token $token ): int => $token->get_id(), $found ),
+			'active_only must agree with Token::is_active(), which counts consumption too.'
+		);
+
+		$this->assertCount( 4, $this->plugin->get_tokens()->find_for_user( $user_id ) );
+	}
+
+	public function test_rows_minted_in_the_same_second_keep_a_stable_order() {
+		$user_id = self::factory()->user->create();
+		$created_at = current_time( 'mysql', true );
+
+		$first = $this->issue( [ 'user_id' => $user_id ] );
+		$second = $this->issue( [ 'user_id' => $user_id ] );
+
+		// A refresh mints its pair inside one second, so created_at alone
+		// cannot order them.
+		$this->set_row( $first['token']->get_id(), [ 'created_at' => $created_at ] );
+		$this->set_row( $second['token']->get_id(), [ 'created_at' => $created_at ] );
+
+		$found = $this->plugin->get_tokens()->find_for_user( $user_id );
+
+		$this->assertSame(
+			[ $second['token']->get_id(), $first['token']->get_id() ],
+			array_map( fn ( Token $token ): int => $token->get_id(), $found ),
+			'The newest row must come first, and the order must not depend on the second they share.'
+		);
+	}
+
+	public function test_counts_agree_with_the_listing() {
+		$user_id = self::factory()->user->create();
+
+		$this->issue( [ 'user_id' => $user_id ] );
+		$expired = $this->issue( [ 'user_id' => $user_id ] );
+
+		$this->expire( $expired['token']->get_id() );
+
+		$tokens = $this->plugin->get_tokens();
+
+		$this->assertSame( 2, $tokens->count_for_user( $user_id ) );
+		$this->assertSame( 1, $tokens->count_for_user( $user_id, [ 'active_only' => true ] ) );
+		$this->assertCount( $tokens->count_for_user( $user_id ), $tokens->find_for_user( $user_id ) );
+	}
+
+	public function test_the_listing_can_be_filtered_by_client() {
+		$this->issue( [ 'client_id' => 'op_one' ] );
+		$this->issue( [ 'client_id' => 'op_two' ] );
+
+		$found = $this->plugin->get_tokens()->find( [ 'client_id' => 'op_one' ] );
+
+		$this->assertCount( 1, $found );
+		$this->assertSame( 'op_one', $found[0]->get_client_id() );
+	}
+
+	public function test_the_listing_is_limited_and_offset() {
+		$user_id = self::factory()->user->create();
+
+		$this->issue( [ 'user_id' => $user_id ] );
+		$newest = $this->issue( [ 'user_id' => $user_id ] );
+
+		$page = $this->plugin->get_tokens()->find_for_user( $user_id, [ 'limit' => 1 ] );
+
+		$this->assertCount( 1, $page );
+		$this->assertSame( $newest['token']->get_id(), $page[0]->get_id() );
+
+		$this->assertCount(
+			1,
+			$this->plugin->get_tokens()->find_for_user(
+				$user_id,
+				[
+					'limit' => 1,
+					'offset' => 1,
+				]
+			)
+		);
+		$this->assertCount(
+			0,
+			$this->plugin->get_tokens()->find_for_user(
+				$user_id,
+				[
+					'limit' => 1,
+					'offset' => 2,
+				]
+			)
 		);
 	}
 

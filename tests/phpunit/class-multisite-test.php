@@ -179,6 +179,21 @@ class Multisite_Test extends Test_Case {
 		$this->assertCount( 1, $this->plugin->get_tokens()->get_grants_for_user( $user_id ) );
 	}
 
+	public function test_the_token_listing_is_scoped_to_one_site() {
+		$user_id = self::factory()->user->create();
+
+		$this->issue( [ 'user_id' => $user_id ] );
+
+		switch_to_blog( $this->second_blog_id );
+		$found_elsewhere = $this->plugin->get_tokens()->find_for_user( $user_id );
+		$counted_elsewhere = $this->plugin->get_tokens()->count_for_user( $user_id );
+		restore_current_blog();
+
+		$this->assertCount( 0, $found_elsewhere, 'The profile token list must only show this site\'s tokens.' );
+		$this->assertSame( 0, $counted_elsewhere );
+		$this->assertCount( 1, $this->plugin->get_tokens()->find_for_user( $user_id ) );
+	}
+
 	public function test_remembered_consent_does_not_cross_sites() {
 		$user_id = self::factory()->user->create();
 		$resource = $this->get_default_resource_uri();

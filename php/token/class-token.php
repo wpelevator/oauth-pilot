@@ -11,6 +11,21 @@ class Token {
 
 	public const TYPE_REFRESH = 'refresh';
 
+	/**
+	 * The four states a stored token can be read as.
+	 *
+	 * There is deliberately no separate "revoked with the family" state:
+	 * revoke_family() stamps revoked_at on every row it touches, so a family
+	 * revocation is indistinguishable from any other at the row level.
+	 */
+	public const STATE_ACTIVE = 'active';
+
+	public const STATE_CONSUMED = 'consumed';
+
+	public const STATE_EXPIRED = 'expired';
+
+	public const STATE_REVOKED = 'revoked';
+
 	private array $row;
 
 	private function __construct( array $row ) {
@@ -69,6 +84,14 @@ class Token {
 		return empty( $this->row['last_used_at'] ) ? null : (string) $this->row['last_used_at'];
 	}
 
+	public function get_consumed_at(): ?string {
+		return empty( $this->row['consumed_at'] ) ? null : (string) $this->row['consumed_at'];
+	}
+
+	public function get_revoked_at(): ?string {
+		return empty( $this->row['revoked_at'] ) ? null : (string) $this->row['revoked_at'];
+	}
+
 	public function is_expired(): bool {
 		return strtotime( $this->get_expires_at() . ' UTC' ) <= time();
 	}
@@ -83,6 +106,31 @@ class Token {
 
 	public function is_active(): bool {
 		return ! $this->is_expired() && ! $this->is_revoked() && ! $this->is_consumed();
+	}
+
+	/**
+	 * The state to read this row as, when only one may be shown.
+	 *
+	 * Several conditions can hold at once, so the order matters. Revoked wins
+	 * over consumed because a consumed refresh token whose family was later
+	 * revoked is a security relevant row rather than routine rotation history,
+	 * and both win over expired because expiry catches up with every row
+	 * eventually and says the least about why it stopped working.
+	 */
+	public function get_state(): string {
+		if ( $this->is_revoked() ) {
+			return self::STATE_REVOKED;
+		}
+
+		if ( $this->is_consumed() ) {
+			return self::STATE_CONSUMED;
+		}
+
+		if ( $this->is_expired() ) {
+			return self::STATE_EXPIRED;
+		}
+
+		return self::STATE_ACTIVE;
 	}
 
 	/**

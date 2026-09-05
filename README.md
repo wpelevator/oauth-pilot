@@ -215,6 +215,8 @@ The dev client requests `wp:rest` by default. This delegates the account’s exi
 
 The admin screen at **Settings → OAuth Pilot** has three tabs: **Settings** holds the configuration form, **Clients** holds the registered clients table and the form that adds one, and **Status** reports what the server is currently advertising and serving. The tab is carried in a `tab` query argument, with Settings as the default.
 
+The clients table's **Registered** column says where a client came from: `Dynamically` for a self-registration, `Self-published (metadata document)` for a CIMD client, and `By <name>` for one an administrator added by hand, linking to that account for a viewer allowed to edit it. Only the last of the three records an owner, so a client whose owner has since been deleted, or that WP-CLI created without `--user`, reads as `By an administrator`.
+
 Each setting is stored as its own option rather than one serialized array, so WordPress owns its type, default and sanitizer, and each one is individually readable and writable on `/wp/v2/settings` (which requires `manage_options`). A REST write is validated against the setting's schema — an out-of-range lifetime is rejected with a 400 rather than silently clamped — and then passed through the same sanitizer the admin form uses.
 
 | Option | Type | Default |
@@ -301,15 +303,33 @@ wp oauth-pilot client-list [--format=table|json|csv|yaml]
 wp oauth-pilot client-create "My Connector" --redirect-uri=https://example.com/cb [--confidential] [--auth-method=client_secret_post]
 wp oauth-pilot client-revoke <client-id>
 wp oauth-pilot client-delete <client-id>
+wp oauth-pilot token-list [--user=<id>] [--client=<client-id>] [--all] [--limit=<n>] [--format=table|json|csv|yaml]
 wp oauth-pilot token-revoke [--user=<id>] [--client=<client-id>]
 wp oauth-pilot cleanup
 ```
 
 ## Users and revocation
 
-Every user's profile screen has an **Authorized Applications** section listing the applications they approved, with the resource, scopes, last use, and a revoke action. Administrators can revoke any grant. Revocation takes effect immediately: no positive validation result is cached across requests.
+Every user's profile screen has an **OAuth Applications** section, carrying a **Configure** link to this plugin's settings for anyone who can manage it, and two tables under it.
 
-On multisite the list shows the grants made on the current site. Removing a user from a site revokes that site's tokens and deletes its pending authorizations for them, leaving their grants on other sites alone; deleting the account clears everything on every site.
+**Connected Applications** lists the applications this account approved, one row per application and resource, with the scopes, last use, and a revoke action. That row is the unit revocation acts on: `revoke_grant()` ends every token behind it at once. Administrators can revoke anyone's. Revocation takes effect immediately, because no positive validation result is cached across requests.
+
+**Connection Tokens** lists the credentials those connections are made of — one row per access or refresh token, with its application, type, resource, scopes, a truncated family id that ties a rotation chain together, its timestamps, and its state. The stored token hash is never shown: it is a SHA-256 of a random value and there is nothing a human can do with it.
+
+A token is in exactly one of four states, and where several apply the first of these wins:
+
+| State | Meaning |
+| --- | --- |
+| Revoked | Ended deliberately — by the user, by an administrator, or by refresh token reuse detection revoking the whole family. |
+| Consumed | A refresh token that was rotated away normally. This is the bulk of the history. |
+| Expired | Ran out its lifetime. Kept for a week past expiry so reuse detection still has something to match. |
+| Active | Usable right now. |
+
+The table has the two views WordPress list tables use, **Active** and **All**, with Active the default: an integration that refreshes hourly mints hundreds of rows a week that all mean the same thing. All is capped at the 200 most recent; `wp oauth-pilot token-list --all` has no such limit.
+
+The token table is deliberately read-only. Revoking a single access token achieves nothing, because the client mints another from its refresh token on the next call; the unit that means something is the connection, and that is what the **Revoke** button one table up ends.
+
+On multisite both tables cover the current site only, and the section says so — a registration is shared by the network, but the connections approved against it are not. Removing a user from a site revokes that site's tokens and deletes its pending authorizations for them, leaving their grants on other sites alone; deleting the account clears everything on every site.
 
 ## Code layout
 

@@ -134,7 +134,7 @@ class Plugin {
 
 		$this->cleanup = new Cleanup( $this->authorizations, $this->tokens, $this->clients );
 		$this->admin = new Admin\Screen( $this );
-		$this->profile = new Admin\Profile( $this->clients, $this->tokens, $this->authorizations );
+		$this->profile = new Admin\Profile( $this->clients, $this->tokens, $this->authorizations, $this->admin );
 	}
 
 	public function init(): void {

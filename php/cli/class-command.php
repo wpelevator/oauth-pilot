@@ -227,6 +227,86 @@ class Command {
 	}
 
 	/**
+	 * List the tokens issued on this site.
+	 *
+	 * Shows active tokens only unless --all is passed. The stored token hash is
+	 * never reported: it is a SHA-256 of a random value and says nothing a
+	 * human can act on. The family id is what correlates a rotation chain.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--user=<user-id>]
+	 * : Only tokens issued to this user.
+	 *
+	 * [--client=<client-id>]
+	 * : Only tokens issued to this client.
+	 *
+	 * [--all]
+	 * : Include expired, consumed and revoked tokens.
+	 *
+	 * [--limit=<number>]
+	 * : How many tokens to list, newest first.
+	 * ---
+	 * default: 100
+	 * ---
+	 *
+	 * [--format=<format>]
+	 * : Render output in a particular format.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - csv
+	 *   - yaml
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp oauth-pilot token-list --user=1 --all
+	 *
+	 * @subcommand token-list
+	 */
+	public function token_list( array $args, array $assoc_args ): void {
+		$query = [
+			'active_only' => empty( $assoc_args['all'] ),
+			'limit' => max( 1, (int) ( $assoc_args['limit'] ?? 100 ) ),
+		];
+
+		if ( isset( $assoc_args['user'] ) ) {
+			$query['user_id'] = (int) $assoc_args['user'];
+		}
+
+		if ( isset( $assoc_args['client'] ) ) {
+			$query['client_id'] = (string) $assoc_args['client'];
+		}
+
+		$rows = [];
+
+		foreach ( $this->plugin->get_tokens()->find( $query ) as $token ) {
+			$rows[] = [
+				'id' => $token->get_id(),
+				'type' => $token->get_type(),
+				'client_id' => $token->get_client_id(),
+				'user_id' => $token->get_user_id(),
+				'resource' => $token->get_resource(),
+				'scopes' => implode( ' ', $token->get_scopes() ),
+				'family_id' => $token->get_family_id(),
+				'state' => $token->get_state(),
+				'created_at' => $token->get_created_at(),
+				'expires_at' => $token->get_expires_at(),
+				'last_used_at' => (string) $token->get_last_used_at(),
+			];
+		}
+
+		Utils\format_items(
+			(string) ( $assoc_args['format'] ?? 'table' ),
+			$rows,
+			[ 'id', 'type', 'client_id', 'user_id', 'resource', 'scopes', 'family_id', 'state', 'created_at', 'expires_at', 'last_used_at' ]
+		);
+	}
+
+	/**
 	 * Revoke every token a user granted, or every token of one client.
 	 *
 	 * ## OPTIONS

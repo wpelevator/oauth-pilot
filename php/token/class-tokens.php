@@ -392,24 +392,99 @@ class Tokens {
 	}
 
 	/**
+	 * Tokens on this site, newest first.
+	 *
+	 * The ordering carries id as a tiebreaker because a refresh mints several
+	 * rows inside the same second and created_at alone would order them
+	 * differently from one read to the next.
+	 *
+	 * @param array $args 'user_id', 'client_id', 'active_only', 'limit', 'offset'.
+	 *
+	 * @return Token[]
+	 */
+	public function find( array $args = [] ): array {
+		$where = $this->build_where( $args );
+
+		$sql = "SELECT * FROM $this->table_name WHERE {$where['sql']} ORDER BY created_at DESC, id DESC";
+		$params = $where['params'];
+
+		$limit = isset( $args['limit'] ) ? max( 0, (int) $args['limit'] ) : 0;
+
+		if ( $limit > 0 ) {
+			$sql .= ' LIMIT %d OFFSET %d';
+			$params[] = $limit;
+			$params[] = isset( $args['offset'] ) ? max( 0, (int) $args['offset'] ) : 0;
+		}
+
+		$rows = $this->db->get_results( $this->db->prepare( $sql, $params ), ARRAY_A );
+
+		return array_map( [ Token::class, 'from_row' ], (array) $rows );
+	}
+
+	/**
+	 * How many rows find() would return without its limit.
+	 */
+	public function count( array $args = [] ): int {
+		$where = $this->build_where( $args );
+
+		return (int) $this->db->get_var(
+			$this->db->prepare( "SELECT COUNT(*) FROM $this->table_name WHERE {$where['sql']}", $where['params'] )
+		);
+	}
+
+	/**
+	 * The shared WHERE clause behind both reads above.
+	 *
+	 * 'active_only' uses the same three conditions as Token::is_active(), so a
+	 * row the object reports as active is exactly a row this returns.
+	 *
+	 * @return array [ 'sql' => string, 'params' => array ]
+	 */
+	private function build_where( array $args ): array {
+		$conditions = [ 'blog_id = %d' ];
+		$params = [ $this->get_blog_id() ];
+
+		if ( isset( $args['user_id'] ) ) {
+			$conditions[] = 'user_id = %d';
+			$params[] = (int) $args['user_id'];
+		}
+
+		if ( isset( $args['client_id'] ) ) {
+			$conditions[] = 'client_id = %s';
+			$params[] = (string) $args['client_id'];
+		}
+
+		if ( ! empty( $args['active_only'] ) ) {
+			$conditions[] = 'revoked_at IS NULL';
+			$conditions[] = 'consumed_at IS NULL';
+			$conditions[] = 'expires_at > %s';
+			$params[] = current_time( 'mysql', true );
+		}
+
+		return [
+			'sql' => implode( ' AND ', $conditions ),
+			'params' => $params,
+		];
+	}
+
+	/**
+	 * @return Token[]
+	 */
+	public function find_for_user( int $user_id, array $args = [] ): array {
+		return $this->find( array_merge( $args, [ 'user_id' => $user_id ] ) );
+	}
+
+	public function count_for_user( int $user_id, array $args = [] ): int {
+		return $this->count( array_merge( $args, [ 'user_id' => $user_id ] ) );
+	}
+
+	/**
 	 * Active tokens for a user on this site, newest first.
 	 *
 	 * @return Token[]
 	 */
 	public function get_active_for_user( int $user_id ): array {
-		$rows = $this->db->get_results(
-			$this->db->prepare(
-				"SELECT * FROM $this->table_name
-				WHERE user_id = %d AND blog_id = %d AND revoked_at IS NULL AND expires_at > %s
-				ORDER BY created_at DESC",
-				$user_id,
-				$this->get_blog_id(),
-				current_time( 'mysql', true )
-			),
-			ARRAY_A
-		);
-
-		return array_map( [ Token::class, 'from_row' ], (array) $rows );
+		return $this->find_for_user( $user_id, [ 'active_only' => true ] );
 	}
 
 	/**
@@ -480,14 +555,7 @@ class Tokens {
 	}
 
 	public function count_active(): int {
-		return (int) $this->db->get_var(
-			$this->db->prepare(
-				"SELECT COUNT(*) FROM $this->table_name
-				WHERE blog_id = %d AND revoked_at IS NULL AND expires_at > %s",
-				$this->get_blog_id(),
-				current_time( 'mysql', true )
-			)
-		);
+		return $this->count( [ 'active_only' => true ] );
 	}
 
 	/**

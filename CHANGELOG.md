@@ -1,7 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 (2026-09-05)
 
+- Reorganised the profile screen's OAuth area into one **OAuth Applications** section, with a description of what it is, a **Configure** link to the plugin's settings for anyone who can manage it, and two tables beneath it. **Connected Applications** is the former Authorized Applications list, unchanged in what it does. **Connection Tokens** is new.
+- **Connection Tokens** lists the access and refresh tokens behind those connections with the application, type, resource, scopes, a truncated family id, timestamps and one of four states: Active, Consumed, Expired or Revoked. Previously a connection that expired or was revoked simply vanished from the profile, with nothing saying which of the two had happened. The table has the **Active** and **All** views WordPress list tables use, with Active the default and All capped at the 200 most recent. It is read-only: revocation stays on the connection, which is the unit that ends one.
+- **The Connected Applications table and the Status tab's active token count no longer count consumed refresh tokens.** `Tokens::get_active_for_user()` and `count_active()` filtered on revocation and expiry but not on consumption, while `Token::is_active()` checked all three, so a refresh token that had already been rotated away counted as live. Both now use the `is_active()` definition. Grant rows are unaffected in practice — a rotation mints a replacement pair in the same request — but the token counts drop to what is actually usable.
+- The clients table's **Registered** column now names the administrator who added a client by hand, linking to their profile for anyone allowed to edit that account, instead of saying only `By an administrator`. Dynamic and metadata document registrations are unchanged, because neither has a user behind it, and a client whose owner has since been deleted still reads as `By an administrator`.
+- The Revoke action in **Connected Applications** is now an inline destructive link rather than a button, matching how every other table in wp-admin offers a row action, and asks for confirmation first. It is irreversible: the application is disconnected immediately and has to be approved again.
+- Both profile tables now show timestamps as relative time with the exact UTC value in a tooltip, instead of a raw `2026-09-05 14:22:07`.
+- Added `wp oauth-pilot token-list`, filtered by `--user` or `--client`, showing active tokens unless `--all` is passed. The token hash is never reported.
 - Fixed the dev client requesting obsolete scopes instead of the built-in `wp:rest` scope, which could prevent authorization with `invalid_scope`. Updated the refresh hint, test fixtures and scope documentation to distinguish broad WordPress access from explicitly enforced integration scopes.
 
 ## 0.6.0 (2026-09-05)
