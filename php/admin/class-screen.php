@@ -422,10 +422,22 @@ class Screen {
 
 		$action = isset( $_GET['client_action'] ) ? sanitize_key( wp_unslash( $_GET['client_action'] ) ) : '';
 
+		// Registrations are shared by the network, so revoking or deleting one
+		// from a site that did not register it would break every other site's
+		// integration. Those sites may only revoke their own access.
+		if ( in_array( $action, [ 'revoke', 'delete' ], true ) && ! $client->is_managed_by_current_site() ) {
+			$this->redirect_back(
+				[ 'message' => rawurlencode( __( 'That client was registered by another site on this network. Only that site or a network administrator can revoke or delete it.', 'wpelevator-oauth-pilot' ) ) ],
+				self::TAB_CLIENTS
+			);
+		}
+
 		if ( 'revoke' === $action ) {
 			$this->plugin->get_clients()->revoke( $client );
 		} elseif ( 'delete' === $action ) {
 			$this->plugin->get_clients()->delete( $client );
+		} elseif ( 'revoke_local' === $action ) {
+			$this->plugin->get_clients()->revoke_access_on_this_site( $client );
 		}
 
 		$this->redirect_back( [], self::TAB_CLIENTS );

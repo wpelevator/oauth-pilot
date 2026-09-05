@@ -9,6 +9,15 @@ use WPElevator\OAuth_Pilot\Token\Tokens;
 
 /**
  * The only place client rows are read or written.
+ *
+ * The table is network global and, unlike tokens and authorizations, lookups
+ * are deliberately *not* constrained to the current site. That is the point: a
+ * client registered anywhere on a network is known everywhere on it, keeps its
+ * client_id and its secret, and never has to register again per site.
+ *
+ * The blog_id column records which site registered a client, which decides who
+ * may revoke or delete the registration. It never decides where the client may
+ * be used.
  */
 class Clients {
 
@@ -37,6 +46,9 @@ class Clients {
 		return $this->table_name;
 	}
 
+	/**
+	 * Resolve a client by its identifier, from any site of the network.
+	 */
 	public function get_by_client_id( string $client_id ): ?Client {
 		if ( '' === $client_id ) {
 			return null;
@@ -131,6 +143,7 @@ class Clients {
 		$metadata_url = (string) ( $args['metadata_url'] ?? '' );
 
 		$data = [
+			'blog_id' => isset( $args['blog_id'] ) ? (int) $args['blog_id'] : get_current_blog_id(),
 			'client_id' => $client_id,
 			'name' => (string) ( $args['name'] ?? '' ),
 			'client_type' => (string) ( $args['client_type'] ?? Client::TYPE_PUBLIC ),
@@ -175,11 +188,15 @@ class Clients {
 	}
 
 	/**
-	 * Revoke a client and everything issued to it.
+	 * Revoke the registration and everything issued to it, on every site.
+	 *
+	 * The client row is a network wide record, so revoking it is a network wide
+	 * act. A site that only wants to stop trusting a client it did not register
+	 * wants revoke_access_on_this_site() instead.
 	 */
 	public function revoke( Client $client ): bool {
-		$this->tokens->revoke_for_client( $client->get_client_id() );
-		$this->authorizations->delete_for_client( $client->get_client_id() );
+		$this->tokens->revoke_for_client_on_every_site( $client->get_client_id() );
+		$this->authorizations->delete_for_client_on_every_site( $client->get_client_id() );
 
 		$updated = $this->db->update(
 			$this->table_name,
@@ -205,14 +222,41 @@ class Clients {
 	}
 
 	/**
-	 * Delete a client. Revokes its grants and tokens first.
+	 * Delete a client. Revokes its grants and tokens on every site first.
 	 */
 	public function delete( Client $client ): bool {
-		$this->tokens->revoke_for_client( $client->get_client_id() );
-		$this->tokens->delete_for_client( $client->get_client_id() );
-		$this->authorizations->delete_for_client( $client->get_client_id() );
+		$this->tokens->revoke_for_client_on_every_site( $client->get_client_id() );
+		$this->tokens->delete_for_client_on_every_site( $client->get_client_id() );
+		$this->authorizations->delete_for_client_on_every_site( $client->get_client_id() );
 
 		return (bool) $this->db->delete( $this->table_name, [ 'id' => $client->get_id() ] );
+	}
+
+	/**
+	 * Stop trusting a client on the current site without touching the shared
+	 * registration.
+	 *
+	 * This is what an administrator of a site that did not register the client
+	 * gets. Their users' tokens die, their pending requests go, and every other
+	 * site on the network is unaffected.
+	 *
+	 * @return int Tokens revoked on this site.
+	 */
+	public function revoke_access_on_this_site( Client $client ): int {
+		$revoked = $this->tokens->revoke_for_client( $client->get_client_id() );
+
+		$this->authorizations->delete_for_client( $client->get_client_id() );
+
+		/**
+		 * Fires after one site revoked its own access for a client without
+		 * revoking the network wide registration.
+		 *
+		 * @param Client $client  The client that lost access on this site.
+		 * @param int    $revoked Number of tokens revoked.
+		 */
+		do_action( 'oauth_pilot__client_access_revoked_on_site', $client, $revoked );
+
+		return $revoked;
 	}
 
 	public function touch_last_used( Client $client ): void {
@@ -259,8 +303,10 @@ class Clients {
 		}
 
 		if ( $security_metadata_changed ) {
-			$this->tokens->revoke_for_client( $client->get_client_id() );
-			$this->authorizations->delete_for_client( $client->get_client_id() );
+			// The document is shared, so a domain reassignment invalidates the
+			// consent users granted on every site, not only on this one.
+			$this->tokens->revoke_for_client_on_every_site( $client->get_client_id() );
+			$this->authorizations->delete_for_client_on_every_site( $client->get_client_id() );
 
 			/**
 			 * Fires after a CIMD refresh changed redirect URIs or grant types and
@@ -288,7 +334,9 @@ class Clients {
 	 * The exact count of active dynamically registered clients.
 	 *
 	 * This quota is enforced with a real query rather than a best-effort
-	 * counter because it is the one that bounds the table.
+	 * counter because it is the one that bounds the table. The table is shared
+	 * by the network, so the count is too: the quota exists to bound storage,
+	 * and a per-site count would bound nothing.
 	 */
 	public function count_active_dynamic(): int {
 		return (int) $this->db->get_var(
@@ -338,6 +386,10 @@ class Clients {
 	/**
 	 * Self-registered clients (dynamic and CIMD) that were registered but
 	 * never used, and inactive ones that no longer hold tokens.
+	 *
+	 * The token join spans the whole network on purpose: a client is only
+	 * stale when no site is still using it. Every site's cron runs this over
+	 * the shared table, which is harmless because it is idempotent.
 	 *
 	 * @return int Number of deleted clients.
 	 */
@@ -394,6 +446,11 @@ class Clients {
 
 		if ( ! empty( $args['source'] ) ) {
 			$conditions[] = $this->db->prepare( 'source = %s', $args['source'] );
+		}
+
+		// Only for listing by owner. Never pass this when resolving a client.
+		if ( isset( $args['blog_id'] ) ) {
+			$conditions[] = $this->db->prepare( 'blog_id = %d', (int) $args['blog_id'] );
 		}
 
 		if ( ! empty( $args['search'] ) ) {

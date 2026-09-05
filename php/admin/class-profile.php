@@ -3,6 +3,7 @@
 namespace WPElevator\OAuth_Pilot\Admin;
 
 use WP_User;
+use WPElevator\OAuth_Pilot\Authorization\Authorizations;
 use WPElevator\OAuth_Pilot\Client\Clients;
 use WPElevator\OAuth_Pilot\Security_Events;
 use WPElevator\OAuth_Pilot\Token\Tokens;
@@ -18,9 +19,12 @@ class Profile {
 
 	private Tokens $tokens;
 
-	public function __construct( Clients $clients, Tokens $tokens ) {
+	private Authorizations $authorizations;
+
+	public function __construct( Clients $clients, Tokens $tokens, Authorizations $authorizations ) {
 		$this->clients = $clients;
 		$this->tokens = $tokens;
+		$this->authorizations = $authorizations;
 	}
 
 	public function init(): void {
@@ -28,6 +32,7 @@ class Profile {
 		add_action( 'edit_user_profile', [ $this, 'action_render_grants' ] );
 		add_action( 'admin_post_' . self::ACTION_REVOKE, [ $this, 'action_revoke_grant' ] );
 		add_action( 'deleted_user', [ $this, 'action_delete_user_data' ] );
+		add_action( 'remove_user_from_blog', [ $this, 'action_remove_user_from_blog' ], 10, 2 );
 	}
 
 	public function get_revoke_url( int $user_id, string $client_id, string $resource_uri ): string {
@@ -113,10 +118,34 @@ class Profile {
 	}
 
 	/**
-	 * A deleted user keeps no grants behind.
+	 * A deleted user keeps no grants behind, on any site of the network.
+	 *
+	 * This hook fires when the account itself is gone, so the cleanup is not
+	 * scoped to the site that happened to run the deletion.
 	 */
 	public function action_delete_user_data( int $user_id ): void {
+		$this->tokens->revoke_for_user_on_every_site( $user_id );
+		$this->tokens->delete_for_user_on_every_site( $user_id );
+		$this->authorizations->delete_for_user_on_every_site( $user_id );
+	}
+
+	/**
+	 * Losing membership of a site ends that site's grants and nothing else.
+	 *
+	 * The account and its grants on other sites survive; the tokens that were
+	 * issued against capabilities this user no longer has do not.
+	 */
+	public function action_remove_user_from_blog( int $user_id, int $blog_id ): void {
+		if ( ! is_multisite() ) {
+			return;
+		}
+
+		switch_to_blog( $blog_id );
+
 		$this->tokens->revoke_for_user( $user_id );
 		$this->tokens->delete_for_user( $user_id );
+		$this->authorizations->delete_for_user( $user_id );
+
+		restore_current_blog();
 	}
 }

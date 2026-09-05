@@ -25,7 +25,7 @@ The concrete goal is that an agent MCP client — a Claude or ChatGPT connector,
 - Not a replacement for roles and capabilities. A scope narrows a token; WordPress capabilities still decide what the represented user may do. OAuth Pilot can never grant a user a capability they do not already have.
 - Implicit, password, client credentials and device grants are not implemented.
 
-Deferred to a later release: token introspection (RFC 7662), a security event log, and subdirectory or multisite issuers.
+Deferred to a later release: token introspection (RFC 7662), a security event log, and subdirectory or multisite issuers. Multisite *storage* is supported — one shared client registration per network, with tokens scoped per site; see [Storage, retention and cleanup](#storage-retention-and-cleanup).
 
 ## Requirements
 
@@ -307,6 +307,8 @@ wp oauth-pilot cleanup
 
 Every user's profile screen has an **Authorized Applications** section listing the applications they approved, with the resource, scopes, last use, and a revoke action. Administrators can revoke any grant. Revocation takes effect immediately: no positive validation result is cached across requests.
 
+On multisite the list shows the grants made on the current site. Removing a user from a site revokes that site's tokens and deletes its pending authorizations for them, leaving their grants on other sites alone; deleting the account clears everything on every site.
+
 ## Code layout
 
 Classes live under `php/`, grouped by domain with the namespace mirroring the directory, the way seo-pilot groups `head/` and `sitemaps/`:
@@ -328,17 +330,33 @@ Classes live under `php/`, grouped by domain with the namespace mirroring the di
 
 ## Storage, retention and cleanup
 
-Three tables, per site on multisite:
+Three tables, named from `$wpdb->base_prefix` so a multisite network shares one set of them rather than one set per site:
 
-- `{prefix}oauth_pilot_clients` — registered clients. Secrets stored as SHA-256 hashes only. Clients registered through a Client ID Metadata Document also carry the document URL, its SHA-256 hash for indexed lookup, and the fetch and cache-expiry timestamps.
-- `{prefix}oauth_pilot_authorizations` — one row per authorization flow, from pending request through approved code to consumed.
-- `{prefix}oauth_pilot_tokens` — access and refresh tokens, with the family ID used for rotation and reuse revocation. Token hashes only.
+- `{base_prefix}oauth_pilot_clients` — registered clients. Secrets stored as SHA-256 hashes only. Clients registered through a Client ID Metadata Document also carry the document URL, its SHA-256 hash for indexed lookup, and the fetch and cache-expiry timestamps.
+- `{base_prefix}oauth_pilot_authorizations` — one row per authorization flow, from pending request through approved code to consumed.
+- `{base_prefix}oauth_pilot_tokens` — access and refresh tokens, with the family ID used for rotation and reuse revocation. Token hashes only.
+
+### On multisite
+
+The split follows the one WordPress already draws: identity is global, authority is per site. `wp_users` is global while capabilities are per site, and a user existing on a network says nothing about what they may do on any given site.
+
+So a **client registration is network wide**. Lookups by client ID and by metadata document URL are deliberately not filtered by site: an agent registered anywhere on the network is known everywhere on it, keeps its client ID and its secret, and never registers again. The `blog_id` column on a client row records which site registered it, which decides who may revoke it — never where it may be used.
+
+**Tokens and authorizations are per site.** Every read, update and delete of those two tables carries the current site's ID, so a token minted on one site does not resolve on another at all, rather than being denied later by a scope check. Remembered consent is derived from live tokens, so a user who approved an agent on one site is still asked on the next: the same scope names mean different things against different capability sets.
+
+Revoking or deleting a registration therefore reaches the whole network, and only the registering site or a network administrator may do it. Any other site is offered **Revoke access on this site**, which ends its own tokens and leaves the rest of the network working.
+
+Quotas on active dynamic and metadata document clients count across the network, because that is what bounds the shared table. The cap on pending authorization requests stays per site.
+
+Sub-sites of a network still cannot serve their own issuer metadata; see [Requirements](#requirements).
 
 Default lifetimes: authorization request 10 minutes, code 5 minutes, access token 1 hour, refresh token 30 days. Remembered consent is derived from the user's live tokens rather than a separate table, so revoking a grant also revokes the memory of it.
 
 Cleanup runs hourly (expired authorizations) and daily (expired tokens, self-registered clients — dynamic and metadata document — that never completed an authorization after 24 hours, and inactive ones holding no live tokens after 90 days).
 
-Deactivating the plugin unschedules cleanup and keeps all data. Uninstalling drops the three tables and deletes every `oauth_pilot__` option, the same way the other WP Elevator plugins clean up after themselves.
+Deleting a site from a network deletes its tokens and authorizations. Clients it registered are deleted only when no live token for them remains anywhere on the network; any still in use are reassigned to the network rather than destroyed, so a deleted sub-site cannot take other sites' integrations down with it. The tables themselves are deliberately not registered with `wpmu_drop_tables`, because they belong to the network rather than to the site.
+
+Deactivating the plugin unschedules cleanup and keeps all data. Uninstalling drops the three tables and deletes every `oauth_pilot__` option on every site of the network, the same way the other WP Elevator plugins clean up after themselves.
 
 ## Restricting which clients can register
 

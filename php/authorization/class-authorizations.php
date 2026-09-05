@@ -14,6 +14,10 @@ use WPElevator\OAuth_Pilot\Token\Tokens;
  * requests can never both advance the same row. The repository reports how
  * many rows the statement actually affected, which is the atomicity contract
  * the tests assert against.
+ *
+ * The table is network global. Every statement carries the current blog_id, so
+ * an authorization request started on one site of a network cannot be bound,
+ * approved or exchanged on another.
  */
 class Authorizations {
 
@@ -44,6 +48,14 @@ class Authorizations {
 	}
 
 	/**
+	 * The site every query below is constrained to. Resolved per call so that a
+	 * switch_to_blog() during the request moves the repository with it.
+	 */
+	private function get_blog_id(): int {
+		return get_current_blog_id();
+	}
+
+	/**
 	 * Create the pending request and return the opaque request identifier that
 	 * is handed to the browser. Only its hash is stored.
 	 *
@@ -53,6 +65,7 @@ class Authorizations {
 		$request_id = Random::credential();
 
 		$data = [
+			'blog_id' => $this->get_blog_id(),
 			'request_id_hash' => Random::hash( $request_id ),
 			'code_hash' => null,
 			'client_id' => (string) $args['client_id'],
@@ -91,7 +104,11 @@ class Authorizations {
 
 	public function get_by_id( int $id ): ?Authorization {
 		$row = $this->db->get_row(
-			$this->db->prepare( "SELECT * FROM $this->table_name WHERE id = %d", $id ),
+			$this->db->prepare(
+				"SELECT * FROM $this->table_name WHERE id = %d AND blog_id = %d",
+				$id,
+				$this->get_blog_id()
+			),
 			ARRAY_A
 		);
 
@@ -111,12 +128,14 @@ class Authorizations {
 				"UPDATE $this->table_name
 				SET user_id = %d, session_token_hash = %s
 				WHERE id = %d
+				AND blog_id = %d
 				AND status = %s
 				AND expires_at > %s
 				AND user_id IS NULL",
 				$user_id,
 				Random::hash( $session_token ),
 				$authorization->get_id(),
+				$this->get_blog_id(),
 				Authorization::STATUS_PENDING,
 				current_time( 'mysql', true )
 			)
@@ -159,6 +178,7 @@ class Authorizations {
 				"UPDATE $this->table_name
 				SET code_hash = %s, scopes = %s, status = %s, approved_at = %s, expires_at = %s
 				WHERE id = %d
+				AND blog_id = %d
 				AND status = %s
 				AND user_id = %d
 				AND expires_at > %s",
@@ -168,6 +188,7 @@ class Authorizations {
 				$now,
 				gmdate( 'Y-m-d H:i:s', time() + max( 1, $lifetime ) ),
 				$authorization->get_id(),
+				$this->get_blog_id(),
 				Authorization::STATUS_PENDING,
 				$user_id,
 				$now
@@ -189,11 +210,13 @@ class Authorizations {
 				"UPDATE $this->table_name
 				SET status = %s, consumed_at = %s
 				WHERE id = %d
+				AND blog_id = %d
 				AND status = %s
 				AND user_id = %d",
 				Authorization::STATUS_DENIED,
 				$now,
 				$authorization->get_id(),
+				$this->get_blog_id(),
 				Authorization::STATUS_PENDING,
 				$user_id
 			)
@@ -213,11 +236,13 @@ class Authorizations {
 				"UPDATE $this->table_name
 				SET status = %s, consumed_at = %s
 				WHERE id = %d
+				AND blog_id = %d
 				AND status = %s
 				AND expires_at > %s",
 				Authorization::STATUS_CONSUMED,
 				$now,
 				$authorization->get_id(),
+				$this->get_blog_id(),
 				Authorization::STATUS_APPROVED,
 				$now
 			)
@@ -249,6 +274,10 @@ class Authorizations {
 		);
 	}
 
+	/**
+	 * Deliberately not blog scoped: expiry is a property of the row, and
+	 * bounding the shared table should not depend on which site's cron runs.
+	 */
 	public function delete_expired(): int {
 		return (int) $this->db->query(
 			$this->db->prepare(
@@ -261,7 +290,9 @@ class Authorizations {
 	public function count_pending(): int {
 		return (int) $this->db->get_var(
 			$this->db->prepare(
-				"SELECT COUNT(*) FROM $this->table_name WHERE status = %s AND expires_at > %s",
+				"SELECT COUNT(*) FROM $this->table_name
+				WHERE blog_id = %d AND status = %s AND expires_at > %s",
+				$this->get_blog_id(),
 				Authorization::STATUS_PENDING,
 				current_time( 'mysql', true )
 			)
@@ -270,11 +301,37 @@ class Authorizations {
 
 	public function delete_for_client( string $client_id ): int {
 		return (int) $this->db->query(
+			$this->db->prepare(
+				"DELETE FROM $this->table_name WHERE client_id = %s AND blog_id = %d",
+				$client_id,
+				$this->get_blog_id()
+			)
+		);
+	}
+
+	/**
+	 * For deleting the client registration itself, which is network wide.
+	 */
+	public function delete_for_client_on_every_site( string $client_id ): int {
+		return (int) $this->db->query(
 			$this->db->prepare( "DELETE FROM $this->table_name WHERE client_id = %s", $client_id )
 		);
 	}
 
 	public function delete_for_user( int $user_id ): int {
+		return (int) $this->db->query(
+			$this->db->prepare(
+				"DELETE FROM $this->table_name WHERE user_id = %d AND blog_id = %d",
+				$user_id,
+				$this->get_blog_id()
+			)
+		);
+	}
+
+	/**
+	 * For a user leaving the network, not for one leaving a single site.
+	 */
+	public function delete_for_user_on_every_site( int $user_id ): int {
 		return (int) $this->db->query(
 			$this->db->prepare( "DELETE FROM $this->table_name WHERE user_id = %d", $user_id )
 		);
@@ -282,7 +339,11 @@ class Authorizations {
 
 	private function get_by_column( string $column, string $value ): ?Authorization {
 		$row = $this->db->get_row(
-			$this->db->prepare( "SELECT * FROM $this->table_name WHERE $column = %s", $value ),
+			$this->db->prepare(
+				"SELECT * FROM $this->table_name WHERE $column = %s AND blog_id = %d",
+				$value,
+				$this->get_blog_id()
+			),
 			ARRAY_A
 		);
 

@@ -96,17 +96,22 @@ class Command {
 				'name' => $client->get_name(),
 				'type' => $client->get_type(),
 				'source' => $client->get_source(),
+				'blog_id' => $client->get_blog_id(),
 				'status' => $client->get_status(),
 				'redirect_uris' => implode( ' ', $client->get_redirect_uris() ),
 				'last_used_at' => (string) $client->get_last_used_at(),
 			];
 		}
 
-		Utils\format_items(
-			(string) ( $assoc_args['format'] ?? 'table' ),
-			$rows,
-			[ 'client_id', 'name', 'type', 'source', 'status', 'redirect_uris', 'last_used_at' ]
-		);
+		$fields = [ 'client_id', 'name', 'type', 'source', 'status', 'redirect_uris', 'last_used_at' ];
+
+		// Registrations are shared by the network, so which site owns one is
+		// only worth a column when there is more than one site.
+		if ( is_multisite() ) {
+			array_splice( $fields, 4, 0, 'blog_id' );
+		}
+
+		Utils\format_items( (string) ( $assoc_args['format'] ?? 'table' ), $rows, $fields );
 	}
 
 	/**
@@ -170,6 +175,9 @@ class Command {
 	/**
 	 * Revoke a client and every token issued to it.
 	 *
+	 * On multisite the registration is shared by the network, so this revokes
+	 * the client and its tokens on every site.
+	 *
 	 * ## OPTIONS
 	 *
 	 * <client-id>
@@ -193,6 +201,9 @@ class Command {
 
 	/**
 	 * Delete a client permanently.
+	 *
+	 * On multisite the registration is shared by the network, so this deletes
+	 * it for every site.
 	 *
 	 * ## OPTIONS
 	 *
@@ -226,18 +237,17 @@ class Command {
 	 * [--client=<client-id>]
 	 * : Revoke all tokens for this client.
 	 *
+	 * [--all-sites]
+	 * : On multisite, revoke across the whole network instead of only the
+	 * current site. Without it, and without --url, the current site is the
+	 * network's main site.
+	 *
 	 * @subcommand token-revoke
 	 */
 	public function token_revoke( array $args, array $assoc_args ): void {
 		$revoked = 0;
-
-		if ( ! empty( $assoc_args['user'] ) ) {
-			$revoked += $this->plugin->get_tokens()->revoke_for_user( (int) $assoc_args['user'] );
-		}
-
-		if ( ! empty( $assoc_args['client'] ) ) {
-			$revoked += $this->plugin->get_tokens()->revoke_for_client( (string) $assoc_args['client'] );
-		}
+		$tokens = $this->plugin->get_tokens();
+		$network_wide = ! empty( $assoc_args['all-sites'] );
 
 		if ( empty( $assoc_args['user'] ) && empty( $assoc_args['client'] ) ) {
 			WP_CLI::error( 'Pass --user or --client.' );
@@ -245,7 +255,29 @@ class Command {
 			return;
 		}
 
-		WP_CLI::success( sprintf( 'Revoked %d tokens.', $revoked ) );
+		if ( ! empty( $assoc_args['user'] ) ) {
+			$user_id = (int) $assoc_args['user'];
+
+			$revoked += $network_wide
+				? $tokens->revoke_for_user_on_every_site( $user_id )
+				: $tokens->revoke_for_user( $user_id );
+		}
+
+		if ( ! empty( $assoc_args['client'] ) ) {
+			$client_id = (string) $assoc_args['client'];
+
+			$revoked += $network_wide
+				? $tokens->revoke_for_client_on_every_site( $client_id )
+				: $tokens->revoke_for_client( $client_id );
+		}
+
+		WP_CLI::success(
+			sprintf(
+				'Revoked %d tokens%s.',
+				$revoked,
+				is_multisite() ? ( $network_wide ? ' across the network' : ' on this site' ) : ''
+			)
+		);
 	}
 
 	/**

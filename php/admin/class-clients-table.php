@@ -31,7 +31,7 @@ class Clients_Table extends WP_List_Table {
 	}
 
 	public function get_columns(): array {
-		return [
+		$columns = [
 			'name' => __( 'Name', 'wpelevator-oauth-pilot' ),
 			'client_id' => __( 'Client ID', 'wpelevator-oauth-pilot' ),
 			'type' => __( 'Type', 'wpelevator-oauth-pilot' ),
@@ -40,6 +40,16 @@ class Clients_Table extends WP_List_Table {
 			'status' => __( 'Status', 'wpelevator-oauth-pilot' ),
 			'last_used_at' => __( 'Last used', 'wpelevator-oauth-pilot' ),
 		];
+
+		// Registrations are shared across the network, so which site owns one
+		// decides who may revoke it and is worth showing.
+		if ( is_multisite() ) {
+			$columns = array_slice( $columns, 0, 4, true )
+				+ [ 'blog' => __( 'Registered on', 'wpelevator-oauth-pilot' ) ]
+				+ array_slice( $columns, 4, null, true );
+		}
+
+		return $columns;
 	}
 
 	public function prepare_items(): void {
@@ -72,11 +82,32 @@ class Clients_Table extends WP_List_Table {
 	public function column_name( $item ): string {
 		$actions = [];
 
+		// A client another site registered is shared: this site may stop
+		// trusting it, but may not take it away from the rest of the network.
+		if ( ! $item->is_managed_by_current_site() ) {
+			$actions['revoke_local'] = sprintf(
+				'<a href="%s" onclick="return confirm(\'%s\');">%s</a>',
+				esc_url( $this->admin->get_client_action_url( 'revoke_local', $item ) ),
+				esc_js( __( 'Revoke this site\'s tokens for this client? Other sites on the network keep working.', 'wpelevator-oauth-pilot' ) ),
+				esc_html__( 'Revoke access on this site', 'wpelevator-oauth-pilot' )
+			);
+
+			return sprintf(
+				'<strong>%s</strong>%s',
+				esc_html( $item->get_name() ),
+				$this->row_actions( $actions )
+			);
+		}
+
 		if ( $item->is_active() ) {
 			$actions['revoke'] = sprintf(
 				'<a href="%s" onclick="return confirm(\'%s\');">%s</a>',
 				esc_url( $this->admin->get_client_action_url( 'revoke', $item ) ),
-				esc_js( __( 'Revoke this client and all of its tokens?', 'wpelevator-oauth-pilot' ) ),
+				esc_js(
+					is_multisite()
+						? __( 'Revoke this client and all of its tokens on every site of the network?', 'wpelevator-oauth-pilot' )
+						: __( 'Revoke this client and all of its tokens?', 'wpelevator-oauth-pilot' )
+				),
 				esc_html__( 'Revoke', 'wpelevator-oauth-pilot' )
 			);
 		}
@@ -84,7 +115,11 @@ class Clients_Table extends WP_List_Table {
 		$actions['delete'] = sprintf(
 			'<a href="%s" onclick="return confirm(\'%s\');">%s</a>',
 			esc_url( $this->admin->get_client_action_url( 'delete', $item ) ),
-			esc_js( __( 'Permanently delete this client?', 'wpelevator-oauth-pilot' ) ),
+			esc_js(
+				is_multisite()
+					? __( 'Permanently delete this client from the whole network?', 'wpelevator-oauth-pilot' )
+					: __( 'Permanently delete this client?', 'wpelevator-oauth-pilot' )
+			),
 			esc_html__( 'Delete', 'wpelevator-oauth-pilot' )
 		);
 
@@ -117,6 +152,26 @@ class Clients_Table extends WP_List_Table {
 				return $item->is_dynamic()
 					? esc_html__( 'Dynamically', 'wpelevator-oauth-pilot' )
 					: esc_html__( 'By an administrator', 'wpelevator-oauth-pilot' );
+
+			case 'blog':
+				$blog_id = $item->get_blog_id();
+
+				if ( 0 === $blog_id ) {
+					return esc_html__( 'The network', 'wpelevator-oauth-pilot' );
+				}
+
+				if ( get_current_blog_id() === $blog_id ) {
+					return esc_html__( 'This site', 'wpelevator-oauth-pilot' );
+				}
+
+				$name = get_blog_option( $blog_id, 'blogname' );
+
+				if ( empty( $name ) ) {
+					/* translators: %d: the numeric site id on the network. */
+					$name = sprintf( __( 'Site %d', 'wpelevator-oauth-pilot' ), $blog_id );
+				}
+
+				return esc_html( $name );
 
 			case 'redirect_uris':
 				return implode(

@@ -63,6 +63,37 @@ class Client {
 		return (string) ( $this->row['client_id'] ?? '' );
 	}
 
+	/**
+	 * The site that registered this client, or 0 when the network owns it.
+	 *
+	 * A registration is network wide: this records where it came from and who
+	 * may revoke or delete it, never where it may be used.
+	 */
+	public function get_blog_id(): int {
+		return (int) ( $this->row['blog_id'] ?? 0 );
+	}
+
+	/**
+	 * Whether the current site may act on the registration itself, rather than
+	 * only on its own tokens for it.
+	 *
+	 * True on single site, on the registering site, for network owned clients,
+	 * and for super admins anywhere.
+	 */
+	public function is_managed_by_current_site(): bool {
+		if ( ! is_multisite() ) {
+			return true;
+		}
+
+		if ( is_super_admin() ) {
+			return true;
+		}
+
+		$blog_id = $this->get_blog_id();
+
+		return 0 === $blog_id || get_current_blog_id() === $blog_id;
+	}
+
 	public function get_name(): string {
 		return (string) ( $this->row['name'] ?? '' );
 	}

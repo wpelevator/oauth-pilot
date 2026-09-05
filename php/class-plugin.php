@@ -134,7 +134,7 @@ class Plugin {
 
 		$this->cleanup = new Cleanup( $this->authorizations, $this->tokens, $this->clients );
 		$this->admin = new Admin\Screen( $this );
-		$this->profile = new Admin\Profile( $this->clients, $this->tokens );
+		$this->profile = new Admin\Profile( $this->clients, $this->tokens, $this->authorizations );
 	}
 
 	public function init(): void {
@@ -147,7 +147,8 @@ class Plugin {
 
 		add_action( 'oauth_pilot__register_scopes', [ $this, 'action_register_default_scopes' ], 5 );
 		add_action( 'oauth_pilot__register_resources', [ $this, 'action_register_default_resources' ], 5 );
-		add_action( 'wp_initialize_site', [ $this, 'action_initialize_site' ], 100 );
+		// A new site needs no schema work: the tables belong to the network.
+		add_action( 'wp_uninitialize_site', [ $this, 'action_uninitialize_site' ], 10 );
 		add_filter( 'plugin_action_links_' . $this->get_basename(), [ $this, 'filter_plugin_action_links' ] );
 
 		$this->discovery->init();
@@ -193,20 +194,20 @@ class Plugin {
 	}
 
 	/**
-	 * Install the tables for a new site on multisite.
+	 * Drop a deleted site's rows from the network wide tables.
 	 *
-	 * @param mixed $site The new site object.
+	 * The tables themselves stay: they belong to the network, not to the site,
+	 * which is also why they are deliberately not registered with the
+	 * wpmu_drop_tables filter.
+	 *
+	 * @param mixed $site The site being deleted.
 	 */
-	public function action_initialize_site( $site ): void {
+	public function action_uninitialize_site( $site ): void {
 		if ( ! is_multisite() || ! isset( $site->blog_id ) ) {
 			return;
 		}
 
-		switch_to_blog( (int) $site->blog_id );
-
-		( new Schema( $GLOBALS['wpdb'] ) )->install();
-
-		restore_current_blog();
+		$this->schema->delete_site_data( (int) $site->blog_id );
 	}
 
 	public function filter_plugin_action_links( array $actions ): array {
@@ -303,6 +304,10 @@ class Plugin {
 		return $this->admin;
 	}
 
+	public function get_profile(): Admin\Profile {
+		return $this->profile;
+	}
+
 	public function get_admin_capability(): string {
 		/**
 		 * The capability required to manage the authorization server.
@@ -329,8 +334,33 @@ class Plugin {
 	public static function uninstall(): void {
 		global $wpdb;
 
+		// The tables are network wide, so one drop clears the whole network.
 		( new Schema( $wpdb ) )->uninstall();
 
+		if ( ! is_multisite() ) {
+			self::delete_site_settings();
+
+			return;
+		}
+
+		// Settings stay per site, so they have to be cleared per site.
+		$blog_ids = get_sites(
+			[
+				'fields' => 'ids',
+				'number' => 0,
+			]
+		);
+
+		foreach ( $blog_ids as $blog_id ) {
+			switch_to_blog( (int) $blog_id );
+
+			self::delete_site_settings();
+
+			restore_current_blog();
+		}
+	}
+
+	private static function delete_site_settings(): void {
 		$settings = new Settings();
 
 		foreach ( array_keys( $settings->get_schema() ) as $key ) {

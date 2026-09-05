@@ -4,7 +4,7 @@
  * Description: OAuth 2.1 authorization server for WordPress. Lets agent MCP clients and other applications authenticate against this site.
  * Author: WP Elevator
  * Author URI: https://wpelevator.com
- * Version: 0.5.0
+ * Version: 0.6.0
  * Plugin URI: https://wpelevator.com/plugins/oauth-pilot
  * Update URI: https://updates.wpelevator.com/wp-json/update-pilot/v1/plugins
  * Requires at least: 6.6
