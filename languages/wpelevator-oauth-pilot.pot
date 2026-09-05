@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the OAuth Pilot plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: OAuth Pilot 0.2.1\n"
+"Project-Id-Version: OAuth Pilot 0.7.0\n"
 "Report-Msgid-Bugs-To: https://github.com/wpelevator/basement\n"
 "Last-Translator: support@wpelevator.com\n"
 "Language-Team: support@wpelevator.com\n"
@@ -16,9 +16,9 @@ msgstr ""
 
 #. Plugin Name of the plugin
 #: oauth-pilot.php:3
-#: php/admin/class-screen.php:94
-#: php/admin/class-screen.php:95
-#: php/admin/class-screen.php:177
+#: php/admin/class-screen.php:101
+#: php/admin/class-screen.php:102
+#: php/admin/class-screen.php:184
 msgid "OAuth Pilot"
 msgstr ""
 
@@ -43,7 +43,7 @@ msgid "https://wpelevator.com"
 msgstr ""
 
 #: php/admin/class-clients-table.php:35
-#: php/admin/class-screen.php:291
+#: php/admin/class-screen.php:298
 msgid "Name"
 msgstr ""
 
@@ -52,7 +52,8 @@ msgid "Client ID"
 msgstr ""
 
 #: php/admin/class-clients-table.php:37
-#: php/admin/class-screen.php:302
+#: php/admin/class-profile.php:231
+#: php/admin/class-screen.php:309
 msgid "Type"
 msgstr ""
 
@@ -65,246 +66,388 @@ msgid "Redirects to"
 msgstr ""
 
 #: php/admin/class-clients-table.php:40
-#: php/admin/class-screen.php:68
+#: php/admin/class-screen.php:75
 msgid "Status"
 msgstr ""
 
 #: php/admin/class-clients-table.php:41
-#: php/admin/class-profile.php:62
+#: php/admin/class-profile.php:135
+#: php/admin/class-profile.php:237
 msgid "Last used"
 msgstr ""
 
-#: php/admin/class-clients-table.php:66
+#: php/admin/class-clients-table.php:48
+msgid "Registered on"
+msgstr ""
+
+#: php/admin/class-clients-table.php:76
 msgid "No clients have been registered yet."
 msgstr ""
 
-#: php/admin/class-clients-table.php:79
-msgid "Revoke this client and all of its tokens?"
+#: php/admin/class-clients-table.php:91
+msgid "Revoke this site's tokens for this client? Other sites on the network keep working."
 msgstr ""
 
-#: php/admin/class-clients-table.php:80
-#: php/admin/class-profile.php:76
-msgid "Revoke"
+#: php/admin/class-clients-table.php:92
+msgid "Revoke access on this site"
 msgstr ""
 
-#: php/admin/class-clients-table.php:87
-msgid "Permanently delete this client?"
-msgstr ""
-
-#: php/admin/class-clients-table.php:88
-msgid "Delete"
+#: php/admin/class-clients-table.php:108
+msgid "Revoke this client and all of its tokens on every site of the network?"
 msgstr ""
 
 #: php/admin/class-clients-table.php:109
+msgid "Revoke this client and all of its tokens?"
+msgstr ""
+
+#: php/admin/class-clients-table.php:111
+#: php/admin/class-profile.php:161
+msgid "Revoke"
+msgstr ""
+
+#: php/admin/class-clients-table.php:120
+msgid "Permanently delete this client from the whole network?"
+msgstr ""
+
+#: php/admin/class-clients-table.php:121
+msgid "Permanently delete this client?"
+msgstr ""
+
+#: php/admin/class-clients-table.php:123
+msgid "Delete"
+msgstr ""
+
+#: php/admin/class-clients-table.php:144
 msgid "Confidential"
 msgstr ""
 
-#: php/admin/class-clients-table.php:110
+#: php/admin/class-clients-table.php:145
 msgid "Public"
 msgstr ""
 
-#: php/admin/class-clients-table.php:114
+#: php/admin/class-clients-table.php:149
 msgid "Self-published (metadata document)"
 msgstr ""
 
-#: php/admin/class-clients-table.php:118
+#: php/admin/class-clients-table.php:153
 msgid "Dynamically"
 msgstr ""
 
-#: php/admin/class-clients-table.php:119
-msgid "By an administrator"
+#: php/admin/class-clients-table.php:160
+msgid "The network"
 msgstr ""
 
-#: php/admin/class-clients-table.php:132
+#: php/admin/class-clients-table.php:164
+msgid "This site"
+msgstr ""
+
+#. translators: %d: the numeric site id on the network.
+#: php/admin/class-clients-table.php:171
+#, php-format
+msgid "Site %d"
+msgstr ""
+
+#: php/admin/class-clients-table.php:187
+#: php/admin/class-profile.php:210
+#: php/admin/class-profile.php:336
 msgid "Active"
 msgstr ""
 
-#: php/admin/class-clients-table.php:133
+#: php/admin/class-clients-table.php:188
+#: php/admin/class-profile.php:327
 msgid "Revoked"
 msgstr ""
 
-#: php/admin/class-clients-table.php:139
-#: php/admin/class-profile.php:73
+#: php/admin/class-clients-table.php:194
+#: php/admin/class-profile.php:145
+#: php/admin/class-profile.php:251
 msgid "Never"
 msgstr ""
 
-#: php/admin/class-profile.php:51
-msgid "Authorized Applications"
+#: php/admin/class-clients-table.php:215
+msgid "By an administrator"
 msgstr ""
 
-#: php/admin/class-profile.php:54
-msgid "No applications have been authorized for this account."
+#. translators: %s: the display name of the administrator who registered the client.
+#: php/admin/class-clients-table.php:229
+#, php-format
+msgid "By %s"
 msgstr ""
 
-#: php/admin/class-profile.php:59
+#: php/admin/class-profile.php:87
+msgid "OAuth Applications"
+msgstr ""
+
+#: php/admin/class-profile.php:91
+msgid "Configure"
+msgstr ""
+
+#: php/admin/class-profile.php:97
+msgid "The applications this account has approved to access the site on its behalf, and the credentials they use to do it. Revoking a connection disconnects the application immediately."
+msgstr ""
+
+#: php/admin/class-profile.php:100
+msgid "Both lists cover this site only, because a connection approved on one site of the network does not carry to another."
+msgstr ""
+
+#: php/admin/class-profile.php:104
+msgid "Connected Applications"
+msgstr ""
+
+#: php/admin/class-profile.php:108
+msgid "Connection Tokens"
+msgstr ""
+
+#: php/admin/class-profile.php:123
+msgid "No applications have been approved for this account."
+msgstr ""
+
+#: php/admin/class-profile.php:132
+#: php/admin/class-profile.php:230
 msgid "Application"
 msgstr ""
 
-#: php/admin/class-profile.php:60
+#: php/admin/class-profile.php:133
+#: php/admin/class-profile.php:232
 msgid "Resource"
 msgstr ""
 
-#: php/admin/class-profile.php:61
+#: php/admin/class-profile.php:134
+#: php/admin/class-profile.php:233
 msgid "Permissions"
 msgstr ""
 
-#: php/admin/class-profile.php:94
+#: php/admin/class-profile.php:159
+msgid "Revoke this connection? The application is disconnected immediately and has to be approved again before it can be used."
+msgstr ""
+
+#: php/admin/class-profile.php:189
+msgid "No tokens have been issued to this account."
+msgstr ""
+
+#: php/admin/class-profile.php:204
+msgid "Approving an application issues it a short lived access token and a refresh token that renews it. Rotated, expired and revoked tokens are kept for a while so that a replayed credential can still be recognised."
+msgstr ""
+
+#: php/admin/class-profile.php:216
+msgid "All"
+msgstr ""
+
+#: php/admin/class-profile.php:225
+msgid "No active tokens. This account has approved applications that are not connected right now."
+msgstr ""
+
+#: php/admin/class-profile.php:234
+msgid "Family"
+msgstr ""
+
+#: php/admin/class-profile.php:235
+msgid "Created"
+msgstr ""
+
+#: php/admin/class-profile.php:236
+msgid "Expires"
+msgstr ""
+
+#: php/admin/class-profile.php:238
+msgid "State"
+msgstr ""
+
+#. translators: 1: number of token rows shown, 2: number of token rows held in total.
+#: php/admin/class-profile.php:263
+#, php-format
+msgid "Showing the %1$d most recent of %2$d tokens. Use wp oauth-pilot token-list for the rest."
+msgstr ""
+
+#: php/admin/class-profile.php:320
+msgid "Refresh"
+msgstr ""
+
+#: php/admin/class-profile.php:321
+msgid "Access"
+msgstr ""
+
+#: php/admin/class-profile.php:330
+msgid "Consumed"
+msgstr ""
+
+#: php/admin/class-profile.php:333
+msgid "Expired"
+msgstr ""
+
+#. translators: %s: a human readable time difference, such as "5 mins".
+#: php/admin/class-profile.php:361
+#, php-format
+msgid "%s ago"
+msgstr ""
+
+#. translators: %s: a human readable time difference, such as "5 mins".
+#: php/admin/class-profile.php:363
+#, php-format
+msgid "in %s"
+msgstr ""
+
+#: php/admin/class-profile.php:388
 msgid "You are not allowed to revoke this authorization."
 msgstr ""
 
-#: php/admin/class-screen.php:66
-#: php/class-plugin.php:216
+#: php/admin/class-screen.php:73
+#: php/class-plugin.php:217
 msgid "Settings"
 msgstr ""
 
-#: php/admin/class-screen.php:67
+#: php/admin/class-screen.php:74
 msgid "Clients"
 msgstr ""
 
 #. translators: %s: link to the General Settings screen.
-#: php/admin/class-screen.php:112
+#: php/admin/class-screen.php:119
 #, php-format
 msgid "The site address is not HTTPS. OAuth clients will refuse to connect. Update it on the <a href=\"%s\">General Settings</a> screen."
 msgstr ""
 
 #. translators: %s: the metadata URL that has to work.
-#: php/admin/class-screen.php:122
+#: php/admin/class-screen.php:129
 #, php-format
 msgid "This site is a subdirectory site on a multisite network. RFC 8414 places the authorization server metadata at <code>%s</code>, which is at the root of the host, where the request resolves to the main site of the network and cannot serve this site. Use the main site as the issuer, or give this site its own subdomain."
 msgstr ""
 
 #. translators: %s: the metadata URL that has to work.
-#: php/admin/class-screen.php:128
+#: php/admin/class-screen.php:135
 #, php-format
 msgid "WordPress is installed in a subdirectory. RFC 8414 places the authorization server metadata at <code>%s</code>, which is at the root of the host and outside the paths WordPress rewrite rules can reach from a subdirectory install. Add a server-level rewrite or proxy rule for that path, or run the authorization server on a root install."
 msgstr ""
 
 #. translators: %s: link to the Permalinks settings screen.
-#: php/admin/class-screen.php:136
+#: php/admin/class-screen.php:143
 #, php-format
 msgid "The well-known discovery rewrite rules are missing. Visit <a href=\"%s\">Settings then Permalinks</a> and save to flush the rewrite rules."
 msgstr ""
 
-#: php/admin/class-screen.php:142
+#: php/admin/class-screen.php:149
 msgid "The cleanup schedule is not registered, so expired authorizations and tokens will not be removed."
 msgstr ""
 
-#: php/admin/class-screen.php:170
-#: php/admin/class-screen.php:436
+#: php/admin/class-screen.php:177
+#: php/admin/class-screen.php:455
 msgid "You are not allowed to manage OAuth Pilot."
 msgstr ""
 
-#: php/admin/class-screen.php:219
+#: php/admin/class-screen.php:226
 msgid "Dynamic client registration"
 msgstr ""
 
-#: php/admin/class-screen.php:224
+#: php/admin/class-screen.php:231
 msgid "Enable dynamic client registration"
 msgstr ""
 
-#: php/admin/class-screen.php:229
+#: php/admin/class-screen.php:236
 msgid "Limit dynamic client domains"
 msgstr ""
 
-#: php/admin/class-screen.php:232
+#: php/admin/class-screen.php:239
 msgid "Limit the dynamic client registration only to these hosts (one domain per line). Listed domain names are matched against the client redirect_url hostname. Loopback callbacks such as localhost or 127.0.0.1 used by native and CLI clients are always allowed. Leave empty to allow any host."
 msgstr ""
 
-#: php/admin/class-screen.php:236
+#: php/admin/class-screen.php:243
 msgid "Client ID Metadata Documents (CIMD) registration"
 msgstr ""
 
-#: php/admin/class-screen.php:241
+#: php/admin/class-screen.php:248
 msgid "Accept HTTPS URL client identifiers backed by a client metadata document"
 msgstr ""
 
-#: php/admin/class-screen.php:243
+#: php/admin/class-screen.php:250
 msgid "Recommended for MCP clients instead of dynamic client registration. WordPress fetches and validates the client's self-published metadata document at the client_id URL. The document host must be publicly reachable."
 msgstr ""
 
-#: php/admin/class-screen.php:247
+#: php/admin/class-screen.php:254
 msgid "REST API authentication"
 msgstr ""
 
-#: php/admin/class-screen.php:252
+#: php/admin/class-screen.php:259
 msgid "Accept OAuth bearer tokens on all WordPress REST endpoints, including endpoints registered by plugins. Endpoint permission checks still apply."
 msgstr ""
 
-#: php/admin/class-screen.php:257
+#: php/admin/class-screen.php:264
 msgid "Access token lifetime"
 msgstr ""
 
-#: php/admin/class-screen.php:260
 #: php/admin/class-screen.php:267
+#: php/admin/class-screen.php:274
 msgid "seconds"
 msgstr ""
 
-#: php/admin/class-screen.php:264
+#: php/admin/class-screen.php:271
 msgid "Refresh token lifetime"
 msgstr ""
 
-#: php/admin/class-screen.php:285
+#: php/admin/class-screen.php:292
 msgid "Add a client"
 msgstr ""
 
-#: php/admin/class-screen.php:295
+#: php/admin/class-screen.php:302
 msgid "Redirect URIs"
 msgstr ""
 
-#: php/admin/class-screen.php:298
+#: php/admin/class-screen.php:305
 msgid "List of allowed redirect URIs, one per line. Must be HTTPS, or HTTP for loopback address."
 msgstr ""
 
-#: php/admin/class-screen.php:304
+#: php/admin/class-screen.php:311
 msgid "Public, authenticates with PKCE only"
 msgstr ""
 
-#: php/admin/class-screen.php:305
+#: php/admin/class-screen.php:312
 msgid "Confidential, receives a client secret"
 msgstr ""
 
-#: php/admin/class-screen.php:309
+#: php/admin/class-screen.php:316
 msgid "Client authentication"
 msgstr ""
 
-#: php/admin/class-screen.php:315
+#: php/admin/class-screen.php:322
 msgid "Only used by confidential clients."
 msgstr ""
 
-#: php/admin/class-screen.php:319
+#: php/admin/class-screen.php:326
 msgid "Add client"
 msgstr ""
 
-#: php/admin/class-screen.php:334
+#: php/admin/class-screen.php:341
 msgid "Issuer"
 msgstr ""
 
-#: php/admin/class-screen.php:338
+#: php/admin/class-screen.php:345
 msgid "Authorization server metadata"
 msgstr ""
 
-#: php/admin/class-screen.php:348
+#: php/admin/class-screen.php:355
 msgid "Registered resources"
 msgstr ""
 
-#: php/admin/class-screen.php:358
+#: php/admin/class-screen.php:365
 msgid "Active tokens"
 msgstr ""
 
-#: php/admin/class-screen.php:397
+#: php/admin/class-screen.php:404
 msgid "The client secret is shown only once. Copy it now."
 msgstr ""
 
-#: php/admin/class-screen.php:400
+#: php/admin/class-screen.php:407
 msgid "Return to the OAuth Pilot clients"
 msgstr ""
 
-#: php/admin/class-screen.php:402
+#: php/admin/class-screen.php:409
 msgid "Client created"
 msgstr ""
 
-#: php/admin/class-screen.php:420
+#: php/admin/class-screen.php:427
 msgid "That client no longer exists."
+msgstr ""
+
+#: php/admin/class-screen.php:437
+msgid "That client was registered by another site on this network. Only that site or a network administrator can revoke or delete it."
 msgstr ""
 
 #: php/authorization/class-consent.php:72
@@ -327,67 +470,67 @@ msgstr ""
 msgid "The application that started this request is no longer available."
 msgstr ""
 
-#: php/authorization/class-consent.php:107
-msgid "Your account is not allowed to grant the requested permissions."
+#: php/authorization/class-consent.php:113
+msgid "Your account is not allowed to grant any of the requested permissions."
 msgstr ""
 
-#: php/authorization/class-consent.php:141
+#: php/authorization/class-consent.php:153
 msgid "This authorization request was already completed."
 msgstr ""
 
-#: php/authorization/class-consent.php:190
+#: php/authorization/class-consent.php:202
 msgid "Authorization"
 msgstr ""
 
-#: php/authorization/class-consent.php:197
+#: php/authorization/class-consent.php:209
 msgid "Back to site"
 msgstr ""
 
-#: php/authorization/class-consent.php:255
+#: php/authorization/class-consent.php:271
 msgid "Authorize application"
 msgstr ""
 
 #. translators: 1: application name, 2: WordPress user login, 3: user role name.
-#: php/authorization/class-consent.php:266
+#: php/authorization/class-consent.php:282
 #, php-format
 msgid "Application named %1$s wants to access this site as you (%2$s with role %3$s)."
 msgstr ""
 
 #. translators: 1: application name, 2: WordPress user login.
-#: php/authorization/class-consent.php:274
+#: php/authorization/class-consent.php:290
 #, php-format
 msgid "Application named %1$s wants to access this site as you (%2$s)."
 msgstr ""
 
-#: php/authorization/class-consent.php:284
+#: php/authorization/class-consent.php:300
 msgid "This application registered itself automatically and has not been reviewed by an administrator."
 msgstr ""
 
-#: php/authorization/class-consent.php:292
+#: php/authorization/class-consent.php:308
 msgid "Permissions requested"
 msgstr ""
 
-#: php/authorization/class-consent.php:306
+#: php/authorization/class-consent.php:322
 msgid "Resource:"
 msgstr ""
 
-#: php/authorization/class-consent.php:308
+#: php/authorization/class-consent.php:324
 msgid "Redirects to:"
 msgstr ""
 
-#: php/authorization/class-consent.php:310
+#: php/authorization/class-consent.php:326
 msgid "Client ID:"
 msgstr ""
 
-#: php/authorization/class-consent.php:316
+#: php/authorization/class-consent.php:332
 msgid "Approve"
 msgstr ""
 
-#: php/authorization/class-consent.php:319
+#: php/authorization/class-consent.php:335
 msgid "Deny"
 msgstr ""
 
-#: php/authorization/class-consent.php:326
+#: php/authorization/class-consent.php:342
 msgid "Sign in as a different user"
 msgstr ""
 
@@ -415,7 +558,6 @@ msgid "This client may not use the authorization code grant."
 msgstr ""
 
 #: php/authorization/class-service.php:119
-#: php/client/class-registration.php:414
 msgid "Only the code response type is supported."
 msgstr ""
 
@@ -439,23 +581,23 @@ msgstr ""
 msgid "Too many authorization requests. Try again later."
 msgstr ""
 
-#: php/authorization/class-service.php:347
+#: php/authorization/class-service.php:356
 msgid "The requested resource is not registered on this server."
 msgstr ""
 
-#: php/authorization/class-service.php:356
+#: php/authorization/class-service.php:365
 msgid "A resource parameter is required because this server has no default resource."
 msgstr ""
 
-#: php/class-plugin.php:177
+#: php/class-plugin.php:178
 msgid "WordPress REST API"
 msgstr ""
 
-#: php/class-plugin.php:188
+#: php/class-plugin.php:189
 msgid "Use the WordPress REST API"
 msgstr ""
 
-#: php/class-plugin.php:189
+#: php/class-plugin.php:190
 msgid "Use REST endpoints with the same permissions as your WordPress account."
 msgstr ""
 
@@ -619,26 +761,24 @@ msgstr ""
 msgid "Duplicate redirect URIs are not accepted."
 msgstr ""
 
-#: php/client/class-registration.php:372
+#: php/client/class-registration.php:383
 msgid "The grant_types value must be an array."
 msgstr ""
 
-#. translators: %s: the requested grant type.
-#: php/client/class-registration.php:383
-#, php-format
-msgid "Unsupported grant type: %s"
-msgstr ""
-
-#: php/client/class-registration.php:394
+#: php/client/class-registration.php:396
 msgid "The authorization_code grant is required."
 msgstr ""
 
-#: php/client/class-registration.php:430
+#: php/client/class-registration.php:425
+msgid "The code response type is required."
+msgstr ""
+
+#: php/client/class-registration.php:440
 msgid "This site has reached its dynamic client registration limit."
 msgstr ""
 
-#: php/client/class-registration.php:442
 #: php/client/class-registration.php:452
+#: php/client/class-registration.php:462
 msgid "Too many registration attempts. Try again later."
 msgstr ""
 
@@ -662,26 +802,18 @@ msgstr ""
 msgid "The requested scope contains duplicates."
 msgstr ""
 
-#: php/resources/class-scopes.php:201
+#: php/resources/class-scopes.php:212
 msgid "No scopes were requested and the resource has no default scopes."
 msgstr ""
 
-#. translators: %s: the requested scope name.
-#: php/resources/class-scopes.php:213
-#, php-format
-msgid "Unknown scope: %s"
+#: php/resources/class-scopes.php:229
+msgid "None of the requested scopes can be granted."
 msgstr ""
 
-#. translators: %s: the requested scope name.
-#: php/resources/class-scopes.php:224
+#. translators: %s: the space separated scopes the resource supports.
+#: php/resources/class-scopes.php:232
 #, php-format
-msgid "The requested resource does not support the scope: %s"
-msgstr ""
-
-#. translators: %s: the requested scope name.
-#: php/resources/class-scopes.php:235
-#, php-format
-msgid "The client is not allowed to request the scope: %s"
+msgid "None of the requested scopes can be granted for this resource, which supports: %s"
 msgstr ""
 
 #: php/rest/class-controller.php:108
@@ -790,7 +922,7 @@ msgid "The refresh token was issued to a different client."
 msgstr ""
 
 #: php/token/class-service.php:203
-#: php/token/class-service.php:234
+#: php/token/class-service.php:250
 msgid "The refresh token has already been used."
 msgstr ""
 
@@ -802,23 +934,23 @@ msgstr ""
 msgid "The resource does not match the refresh token."
 msgstr ""
 
-#: php/token/class-service.php:224
+#: php/token/class-service.php:237
 msgid "A refresh request may not add scopes."
 msgstr ""
 
-#: php/token/class-service.php:297
+#: php/token/class-service.php:313
 msgid "The access token could not be stored."
 msgstr ""
 
-#: php/token/class-service.php:356
+#: php/token/class-service.php:372
 msgid "The refresh token could not be stored."
 msgstr ""
 
-#: php/token/class-service.php:377
+#: php/token/class-service.php:393
 msgid "The token parameter is required."
 msgstr ""
 
-#: php/token/class-service.php:428
+#: php/token/class-service.php:444
 msgid "Too many token requests. Try again later."
 msgstr ""
 
