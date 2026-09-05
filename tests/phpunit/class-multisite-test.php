@@ -40,7 +40,7 @@ class Multisite_Test extends Test_Case {
 					'token_type' => Token::TYPE_ACCESS,
 					'client_id' => 'op_client',
 					'user_id' => 1,
-					'scopes' => [ 'wp:read' ],
+					'scopes' => [ 'wp:rest' ],
 					'resource' => $this->get_default_resource_uri(),
 				],
 				$args
@@ -187,16 +187,16 @@ class Multisite_Test extends Test_Case {
 			[
 				'user_id' => $user_id,
 				'client_id' => 'op_consent',
-				'scopes' => [ 'wp:read' ],
+				'scopes' => [ 'wp:rest' ],
 			]
 		);
 
 		$this->assertTrue(
-			$this->plugin->get_tokens()->has_active_grant( $user_id, 'op_consent', $resource, [ 'wp:read' ] )
+			$this->plugin->get_tokens()->has_active_grant( $user_id, 'op_consent', $resource, [ 'wp:rest' ] )
 		);
 
 		switch_to_blog( $this->second_blog_id );
-		$remembered = $this->plugin->get_tokens()->has_active_grant( $user_id, 'op_consent', $resource, [ 'wp:read' ] );
+		$remembered = $this->plugin->get_tokens()->has_active_grant( $user_id, 'op_consent', $resource, [ 'wp:rest' ] );
 		restore_current_blog();
 
 		$this->assertFalse(

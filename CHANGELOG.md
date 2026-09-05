@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed the dev client requesting obsolete scopes instead of the built-in `wp:rest` scope, which could prevent authorization with `invalid_scope`. Updated the refresh hint, test fixtures and scope documentation to distinguish broad WordPress access from explicitly enforced integration scopes.
+
 ## 0.6.0 (2026-09-05)
 
 - **Breaking on multisite.** The three tables are now network wide, named from `$wpdb->base_prefix` and carrying a `blog_id` column, so a client registers once for a whole network instead of once per site. An agent known to one site is known to every site on the network, keeps its client ID and its secret, and never runs registration again. Authority is unchanged: every authorization and token row records the site it belongs to and every read of those two tables is filtered by it, so a token issued on one site does not resolve on another at all.

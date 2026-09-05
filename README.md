@@ -76,7 +76,7 @@ Either way a scope is only ever granted by someone who holds the capability behi
 
 A scope request is narrowed rather than refused, because one client sends one scope string to every server it talks to. Scopes this server never registered — `offline_access`, the OpenID Connect set — and scopes belonging to a different resource than the one being requested are ignored, as RFC 6749 permits, leaving the scopes that can actually be granted. Only a request where nothing at all can be granted is refused, with `invalid_scope` naming the scopes the resource does support.
 
-The person approving is narrowed the same way, and for the same reason. An MCP client following the specification's scope selection strategy asks for every scope the resource advertises, so the request routinely exceeds what the user signing in holds capabilities for. Scopes that user cannot grant are dropped at the consent screen instead of failing the connection: an editor approving a request for read and write gets both, a subscriber approving the very same request gets the read scope alone, and only a user who can grant nothing is turned away. The granted set is what the consent screen lists, what the code carries and what the token response reports, so a client is always told what it received.
+The person approving is narrowed the same way, and for the same reason. An MCP client following the specification's scope selection strategy asks for every scope the resource advertises, so the request routinely exceeds what the user signing in holds capabilities for. Scopes that user cannot grant are dropped at the consent screen instead of failing the connection: for an integration that defines a read scope available to subscribers and a write scope requiring `edit_posts`, an editor gets both while a subscriber gets the read scope alone, and only a user who can grant nothing is turned away. The granted set is what the consent screen lists, what the code carries and what the token response reports, so a client is always told what it received.
 
 ## Client ID Metadata Documents
 
@@ -208,6 +208,8 @@ A route covered by a more specific registered resource is left to that resource.
 Anonymous `401` and `403` responses advertise the canonical WordPress REST resource metadata URL in `WWW-Authenticate`, and expose that header to browser clients. The resource has one scope, `wp:rest`, meaning “use the WordPress REST API as this user.” It authenticates the represented account but grants no capability by itself; every endpoint still authorizes the request through its normal permission callback. This avoids guessing intent from the HTTP method, since extensible APIs can multiplex read and write operations through the same method. The setting is off by default.
 
 When the official [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active, OAuth Pilot discovers the registered REST endpoints handled by its HTTP transports and gives each route an endpoint-specific protected resource using the same `wp:rest` scope. This detects custom routes through MCP Adapter's public REST transport contract without treating non-HTTP servers as REST resources. An MCP client connecting to `/wp-json/mcp/mcp-adapter-default-server` therefore receives metadata naming that exact URL as its resource, and a token for the shared `/wp-json/` audience cannot be replayed against it. OAuth Pilot only supplies authentication; MCP Adapter's transport capability check and each ability's permission callback remain the authorization layer. Agent Pilot is not involved.
+
+The dev client requests `wp:rest` by default. This delegates the account’s existing permissions within the token’s audience, including writes the account is allowed to perform. Ordinary REST plugins need no OAuth-specific integration. For narrower delegation, an integration must register its own scopes and enforce them on the relevant operations alongside the normal WordPress permission checks. Registering a scope or checking who may grant it at consent does not enforce that restriction on API requests.
 
 ### Settings
 
@@ -367,6 +369,8 @@ An allow-listed host still proves origin, not the vendor: a callback under `clau
 ## Dynamic registration limits
 
 Registration is unauthenticated by design, so it is bounded: 1,000 active dynamic clients per site (an exact count), 10 registrations per hashed IP per hour and 100 per site per hour (best effort), 10 redirect URIs per client, 2 KB per URI, 32 KB per request body, and a length limit on every metadata string. Adjust with `oauth_pilot__dynamic_registration_limits`. Rejected allow-list violations are recorded as a `dynamic_registration_redirect_host_denied` security event.
+
+Discovery documents use a local copy of Agent Pilot’s request implementation for normalized HTTP headers and conditional requests, including weak and wildcard `If-None-Match` values. OAuth Pilot remains independently installable and supports `GET`, `HEAD`, and `OPTIONS` on these endpoints. OAuth protocol endpoints continue to use WordPress REST request and response objects and the duplicate-aware raw form parser.
 
 ## Troubleshooting
 

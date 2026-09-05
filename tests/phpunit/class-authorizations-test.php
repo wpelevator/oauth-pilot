@@ -19,7 +19,7 @@ class Authorizations_Test extends Test_Case {
 					'client_id' => $client->get_client_id(),
 					'client_snapshot' => $client->to_snapshot(),
 					'redirect_uri' => $client->get_redirect_uris()[0],
-					'scopes' => [ 'wp:read' ],
+					'scopes' => [ 'wp:rest' ],
 					'resource' => $this->get_default_resource_uri(),
 					'code_challenge' => PKCE::challenge_for( Random::credential() ),
 					'state' => 'abc',
@@ -103,12 +103,12 @@ class Authorizations_Test extends Test_Case {
 
 		$authorization = $this->plugin->get_authorizations()->get_by_id( $created['authorization']->get_id() );
 
-		$code = $this->plugin->get_authorizations()->approve( $authorization, $user_id, [ 'wp:read' ] );
+		$code = $this->plugin->get_authorizations()->approve( $authorization, $user_id, [ 'wp:rest' ] );
 
 		$this->assertNotEmpty( $code, 'Approving a bound pending request must produce a code.' );
 
 		$this->assertNull(
-			$this->plugin->get_authorizations()->approve( $authorization, $user_id, [ 'wp:read' ] ),
+			$this->plugin->get_authorizations()->approve( $authorization, $user_id, [ 'wp:rest' ] ),
 			'The conditional update must refuse a second approval of the same row, which is the whole atomicity contract.'
 		);
 	}
@@ -120,7 +120,7 @@ class Authorizations_Test extends Test_Case {
 		$this->plugin->get_authorizations()->bind_user( $created['authorization'], $user_id, 'session-a' );
 
 		$authorization = $this->plugin->get_authorizations()->get_by_id( $created['authorization']->get_id() );
-		$code = $this->plugin->get_authorizations()->approve( $authorization, $user_id, [ 'wp:read' ] );
+		$code = $this->plugin->get_authorizations()->approve( $authorization, $user_id, [ 'wp:rest' ] );
 
 		$approved = $this->plugin->get_authorizations()->get_by_code( $code );
 

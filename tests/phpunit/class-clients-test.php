@@ -92,7 +92,7 @@ class Clients_Test extends Test_Case {
 			[
 				'client_id' => $client->get_client_id(),
 				'user_id' => 1,
-				'scopes' => [ 'wp:read' ],
+				'scopes' => [ 'wp:rest' ],
 				'resource' => $this->get_default_resource_uri(),
 			]
 		);

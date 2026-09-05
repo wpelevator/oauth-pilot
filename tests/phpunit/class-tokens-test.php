@@ -15,7 +15,7 @@ class Tokens_Test extends Test_Case {
 					'token_type' => Token::TYPE_ACCESS,
 					'client_id' => 'op_client',
 					'user_id' => 1,
-					'scopes' => [ 'wp:read' ],
+					'scopes' => [ 'wp:rest' ],
 					'resource' => $this->get_default_resource_uri(),
 				],
 				$args
@@ -119,29 +119,29 @@ class Tokens_Test extends Test_Case {
 			[
 				'user_id' => 7,
 				'client_id' => 'op_a',
-				'scopes' => [ 'wp:read', 'wp:write' ],
+				'scopes' => [ 'test:read', 'test:write' ],
 			]
 		);
 
 		$resource = $this->get_default_resource_uri();
 
 		$this->assertTrue(
-			$this->plugin->get_tokens()->has_active_grant( 7, 'op_a', $resource, [ 'wp:read' ] ),
+			$this->plugin->get_tokens()->has_active_grant( 7, 'op_a', $resource, [ 'test:read' ] ),
 			'Remembered consent applies when the new request asks for no more than was already granted.'
 		);
 
 		$this->assertFalse(
-			$this->plugin->get_tokens()->has_active_grant( 7, 'op_a', $resource, [ 'wp:read', 'mcp:tools' ] ),
+			$this->plugin->get_tokens()->has_active_grant( 7, 'op_a', $resource, [ 'test:read', 'test:extra' ] ),
 			'Asking for an additional scope must require consent again.'
 		);
 
 		$this->assertFalse(
-			$this->plugin->get_tokens()->has_active_grant( 7, 'op_b', $resource, [ 'wp:read' ] ),
+			$this->plugin->get_tokens()->has_active_grant( 7, 'op_b', $resource, [ 'test:read' ] ),
 			'A grant belongs to one client only.'
 		);
 
 		$this->assertFalse(
-			$this->plugin->get_tokens()->has_active_grant( 7, 'op_a', 'https://example.com/other', [ 'wp:read' ] ),
+			$this->plugin->get_tokens()->has_active_grant( 7, 'op_a', 'https://example.com/other', [ 'test:read' ] ),
 			'A grant belongs to one resource only.'
 		);
 	}
@@ -152,7 +152,7 @@ class Tokens_Test extends Test_Case {
 		$this->plugin->get_tokens()->revoke( $issued['token'] );
 
 		$this->assertFalse(
-			$this->plugin->get_tokens()->has_active_grant( 9, 'op_client', $this->get_default_resource_uri(), [ 'wp:read' ] ),
+			$this->plugin->get_tokens()->has_active_grant( 9, 'op_client', $this->get_default_resource_uri(), [ 'wp:rest' ] ),
 			'A revoked token must not keep a remembered consent alive.'
 		);
 
@@ -168,7 +168,7 @@ class Tokens_Test extends Test_Case {
 			[
 				'user_id' => 11,
 				'client_id' => 'op_a',
-				'scopes' => [ 'wp:read' ],
+				'scopes' => [ 'test:read' ],
 			]
 		);
 		$this->issue(
@@ -176,7 +176,7 @@ class Tokens_Test extends Test_Case {
 				'user_id' => 11,
 				'client_id' => 'op_a',
 				'token_type' => Token::TYPE_REFRESH,
-				'scopes' => [ 'wp:write' ],
+				'scopes' => [ 'test:write' ],
 			]
 		);
 
@@ -185,7 +185,7 @@ class Tokens_Test extends Test_Case {
 		$this->assertCount( 1, $grants, 'One client and one resource is one grant, however many tokens it holds.' );
 
 		$this->assertEqualSets(
-			[ 'wp:read', 'wp:write' ],
+			[ 'test:read', 'test:write' ],
 			$grants[0]['scopes'],
 			'The grant must show every scope the user actually gave that client.'
 		);

@@ -53,7 +53,7 @@ function initialState() {
 		clientId: '',
 		clientSecret: '',
 		redirectUri: `http://127.0.0.1:${ PORT }/callback`,
-		scope: 'wp:read wp:write',
+		scope: 'wp:rest',
 		resourceParam: '',
 		discovery: null, // oauth.AuthorizationServer
 		discoverySource: '',

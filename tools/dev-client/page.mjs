@@ -154,7 +154,7 @@ export function renderPage( state, csrfToken = '' ) {
 			<legend>4 · Tokens ${ connected ? badge( 'connected', 'on' ) : badge( 'no token', 'off' ) } ${ staleBadge( s.stale.tokens ) }</legend>
 			${ s.stale.tokens ? '<p class="notice">These tokens belong to an older configuration. They are kept for inspection, but refresh and authenticated API calls are blocked until you authorize again.</p>' : '' }
 			<div class="actions">
-				<form class="inline" method="post" action="/token/refresh">${ csrf }<label><span>Optional narrower scope</span><input name="scope" value="${ esc( s.refreshScope ) }" placeholder="wp:read" /></label><button type="submit" class="secondary" ${ s.tokens?.refresh_token && ! s.stale.tokens ? '' : 'disabled' }>Refresh</button></form>
+				<form class="inline" method="post" action="/token/refresh">${ csrf }<label><span>Optional narrower scope</span><input name="scope" value="${ esc( s.refreshScope ) }" placeholder="Leave empty to retain granted scopes" /></label><button type="submit" class="secondary" ${ s.tokens?.refresh_token && ! s.stale.tokens ? '' : 'disabled' }>Refresh</button></form>
 			</div>
 			<div class="actions">
 				<form class="inline" method="post" action="/token/reuse">${ csrf }<button type="submit" class="secondary" ${ s.lastRefreshToken ? '' : 'disabled' }>Replay old refresh</button></form>

@@ -3,8 +3,7 @@
 namespace WPElevator\OAuth_Pilot\Http;
 
 /**
- * The incoming request, for the discovery documents served outside the REST
- * API.
+ * Incoming discovery request, using the Agent Pilot request implementation.
  */
 class Request {
 
@@ -13,23 +12,44 @@ class Request {
 	private array $headers;
 
 	public function __construct( ?string $method = null, array $headers = [] ) {
-		$this->method = strtoupper( $method ?? 'GET' );
-		$this->headers = array_change_key_case( $headers, CASE_LOWER );
+		$this->method = strtoupper( trim( $method ?? 'GET' ) );
+		$this->headers = [];
+
+		foreach ( $headers as $name => $value ) {
+			if ( is_scalar( $value ) ) {
+				$name = self::normalize_header_name( (string) $name );
+
+				if ( '' !== $name ) {
+					$this->headers[ $name ] = trim( (string) $value );
+				}
+			}
+		}
 	}
 
 	public static function from_globals(): self {
+		$method = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) );
 		$headers = [];
+		$special_headers = [
+			'CONTENT_TYPE' => 'content-type',
+			'CONTENT_LENGTH' => 'content-length',
+			'CONTENT_MD5' => 'content-md5',
+		];
 
-		foreach ( $_SERVER as $key => $value ) {
-			if ( 0 === strpos( (string) $key, 'HTTP_' ) ) {
-				$name = str_replace( '_', '-', strtolower( substr( (string) $key, 5 ) ) );
-				$headers[ $name ] = is_scalar( $value ) ? (string) $value : '';
+		foreach ( $_SERVER as $name => $value ) {
+			if ( is_scalar( $value ) ) {
+				$header_name = null;
+
+				if ( 0 === strpos( (string) $name, 'HTTP_' ) ) {
+					$header_name = substr( (string) $name, 5 );
+				} elseif ( isset( $special_headers[ $name ] ) ) {
+					$header_name = $special_headers[ $name ];
+				}
+
+				if ( null !== $header_name ) {
+					$headers[ self::normalize_header_name( $header_name ) ] = sanitize_text_field( wp_unslash( (string) $value ) );
+				}
 			}
 		}
-
-		$method = isset( $_SERVER['REQUEST_METHOD'] )
-			? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) )
-			: 'GET';
 
 		return new self( $method, $headers );
 	}
@@ -39,17 +59,17 @@ class Request {
 	}
 
 	public function is_method( string ...$methods ): bool {
-		foreach ( $methods as $method ) {
-			if ( strtoupper( $method ) === $this->method ) {
-				return true;
-			}
-		}
+		return in_array( $this->method, array_map( 'strtoupper', $methods ), true );
+	}
 
-		return false;
+	public function get_headers(): array {
+		return $this->headers;
 	}
 
 	public function get_header( string $name ): ?string {
-		return $this->headers[ strtolower( $name ) ] ?? null;
+		$name = self::normalize_header_name( $name );
+
+		return $this->headers[ $name ] ?? null;
 	}
 
 	public function get_origin(): ?string {
@@ -57,18 +77,26 @@ class Request {
 	}
 
 	public function matches_etag( string $etag ): bool {
-		$if_none_match = $this->get_header( 'if-none-match' );
+		foreach ( explode( ',', $this->get_header( 'if-none-match' ) ?? '' ) as $candidate ) {
+			$candidate = trim( $candidate );
 
-		if ( empty( $if_none_match ) ) {
-			return false;
-		}
+			if ( '*' === $candidate ) {
+				return true;
+			}
 
-		foreach ( explode( ',', $if_none_match ) as $candidate ) {
-			if ( trim( $candidate ) === $etag ) {
+			if ( 0 === stripos( $candidate, 'W/' ) ) {
+				$candidate = trim( substr( $candidate, 2 ) );
+			}
+
+			if ( hash_equals( $etag, $candidate ) ) {
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	private static function normalize_header_name( string $name ): string {
+		return strtolower( str_replace( '_', '-', trim( $name ) ) );
 	}
 }
