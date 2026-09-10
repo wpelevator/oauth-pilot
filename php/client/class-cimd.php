@@ -229,14 +229,35 @@ class Cimd {
 			$this->fail_fetch( $client_id, 'missing_client_name' );
 		}
 
-		$auth_method = $document['token_endpoint_auth_method'] ?? Client::AUTH_NONE;
+		// A metadata document is published once for every server, so it
+		// routinely prefers private_key_jwt (ChatGPT, MCP SEP-3149) the same
+		// way it lists extension grants (Claude). Keep none when the
+		// preference or token_endpoint_auth_methods_supported includes it;
+		// refuse only when nothing this server can run remains.
+		$preferred = $document['token_endpoint_auth_method'] ?? Client::AUTH_NONE;
 
-		if ( Client::AUTH_NONE !== $auth_method ) {
-			// The document is fetched from a public URL, so it cannot carry a
-			// shared secret, and this server supports no asymmetric client
-			// authentication. Every CIMD client is a public client.
+		if ( ! is_string( $preferred ) || '' === $preferred ) {
+			$preferred = Client::AUTH_NONE;
+		}
+
+		$advertised = $document['token_endpoint_auth_methods_supported'] ?? [];
+
+		if ( ! is_array( $advertised ) ) {
+			$advertised = [];
+		}
+
+		$client_methods = array_unique(
+			array_filter(
+				array_merge( [ $preferred ], $advertised ),
+				'is_string'
+			)
+		);
+
+		if ( ! in_array( Client::AUTH_NONE, $client_methods, true ) ) {
 			$this->fail_fetch( $client_id, 'unsupported_auth_method' );
 		}
+
+		$document['token_endpoint_auth_method'] = Client::AUTH_NONE;
 
 		$normalized = $this->registration->normalize( $document, $this->get_normalize_limits( $limits ) );
 

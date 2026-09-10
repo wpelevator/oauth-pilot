@@ -254,6 +254,50 @@ class Cimd_Test extends Test_Case {
 		}
 	}
 
+	public function test_resolution_accepts_a_document_that_prefers_private_key_jwt_when_it_also_supports_none() {
+		$document = $this->get_valid_document();
+
+		// The document ChatGPT publishes, which every server it connects to reads.
+		$document['token_endpoint_auth_method'] = 'private_key_jwt';
+		$document['token_endpoint_auth_methods_supported'] = [ 'none', 'private_key_jwt' ];
+		$document['token_endpoint_auth_signing_alg'] = 'RS256';
+		$document['jwks_uri'] = 'https://chatgpt.com/oauth/jwks.json';
+
+		$this->mock_metadata_response( $document );
+
+		$client = $this->plugin->get_cimd()->resolve_for_authorization( self::METADATA_URL );
+
+		$this->assertTrue(
+			$client->is_public(),
+			'A metadata document is published once for every server, so an asymmetric method this one cannot run is dropped when the document also supports none.'
+		);
+
+		$this->assertSame(
+			Client::AUTH_NONE,
+			$client->get_auth_method(),
+			'ChatGPT picks none from the intersection with the methods this server advertises, so the stored client must be public.'
+		);
+	}
+
+	public function test_document_that_only_supports_private_key_jwt_is_rejected() {
+		$document = $this->get_valid_document();
+		$document['token_endpoint_auth_method'] = 'private_key_jwt';
+		$document['jwks_uri'] = 'https://chatgpt.com/oauth/jwks.json';
+
+		$this->mock_metadata_response( $document );
+
+		$this->expectException( OAuth_Error::class );
+
+		try {
+			$this->plugin->get_cimd()->resolve_for_authorization( self::METADATA_URL );
+		} finally {
+			$this->assertNull(
+				$this->plugin->get_clients()->get_by_metadata_url( self::METADATA_URL ),
+				'A document that cannot authenticate as a public client must not be persisted: this server does not verify private_key_jwt assertions.'
+			);
+		}
+	}
+
 	public function test_document_with_an_invalid_redirect_uri_is_rejected() {
 		$document = $this->get_valid_document();
 		$document['redirect_uris'] = [ 'not a uri' ];

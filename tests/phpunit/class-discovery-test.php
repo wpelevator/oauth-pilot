@@ -60,6 +60,18 @@ class Discovery_Test extends Test_Case {
 			'Connectors configured with a pasted client secret commonly send it in the request body.'
 		);
 
+		$this->assertContains(
+			'none',
+			$metadata['token_endpoint_auth_methods_supported'],
+			'CIMD clients such as ChatGPT pick none from the intersection with their own methods when private_key_jwt is not advertised.'
+		);
+
+		$this->assertNotContains(
+			'private_key_jwt',
+			$metadata['token_endpoint_auth_methods_supported'],
+			'private_key_jwt is not implemented; advertising it would make ChatGPT send a client assertion this server cannot verify.'
+		);
+
 		$this->assertTrue(
 			$metadata['authorization_response_iss_parameter_supported'],
 			'RFC 9207 issuer identification is implemented and must be advertised.'

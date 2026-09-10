@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1 (2026-09-10)
+
+- Fixed client registration refusing an entire client id metadata document because it preferred `private_key_jwt`, which blocked ChatGPT. ChatGPT publishes `none` alongside that preference in `token_endpoint_auth_methods_supported` and then picks from the intersection with this server's advertised methods (MCP SEP-3149). Unsupported authentication methods are now dropped and `none` kept, as RFC 7591 allows, matching the grant-type handling added for Claude. A document left without `none` is still refused, and `private_key_jwt` is still not advertised or implemented.
+
 ## 0.7.0 (2026-09-05)
 
 - Reorganised the profile screen's OAuth area into one **OAuth Applications** section, with a description of what it is, a **Configure** link to the plugin's settings for anyone who can manage it, and two tables beneath it. **Connected Applications** is the former Authorized Applications list, unchanged in what it does. **Connection Tokens** is new.
