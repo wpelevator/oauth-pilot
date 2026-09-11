@@ -95,16 +95,16 @@
         },
         {
             "name": "wpelevator/vendor-isolator",
-            "version": "0.1.0",
+            "version": "0.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpelevator/vendor-isolator.git",
-                "reference": "682fb4bfd0227675b054fc0d0cddf96b40d4ed7b"
+                "reference": "e92bf8191dffbb9a0f14a5a57709435602ca48d1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpelevator/vendor-isolator/zipball/682fb4bfd0227675b054fc0d0cddf96b40d4ed7b",
-                "reference": "682fb4bfd0227675b054fc0d0cddf96b40d4ed7b",
+                "url": "https://api.github.com/repos/wpelevator/vendor-isolator/zipball/e92bf8191dffbb9a0f14a5a57709435602ca48d1",
+                "reference": "e92bf8191dffbb9a0f14a5a57709435602ca48d1",
                 "shasum": ""
             },
             "require": {
@@ -130,9 +130,9 @@
             ],
             "description": "Composer plugin to isolate project dependencies by prefixing their namespace",
             "support": {
-                "source": "https://github.com/wpelevator/vendor-isolator/tree/0.1.0"
+                "source": "https://github.com/wpelevator/vendor-isolator/tree/0.1.1"
             },
-            "time": "2024-10-23T08:26:43+00:00"
+            "time": "2026-09-11T09:34:01+00:00"
         }
     ],
     "packages-dev": [],
