@@ -26,6 +26,7 @@ add_action(
 		$require = new Plugin_Require(
 			[
 				'notice' => __( 'OAuth Pilot requires the Update Pilot plugin for automatic updates.', 'wpelevator-oauth-pilot' ),
+				'signing_key' => 'E8AgVyLHxvnyXgB7sqge9Jp9Eo4eAQc+8gfC1KU90iI=',
 			]
 		);
 
@@ -37,9 +38,9 @@ add_filter(
 	'update_pilot__plugins',
 	function ( array $plugins ): array {
 		$plugins[] = [
-			'file' => plugin_basename( __DIR__ . '/oauth-pilot.php' ),
+			'plugin' => plugin_basename( __DIR__ . '/oauth-pilot.php' ),
 			'license_key' => null,
-			'signing_key' => null, // TODO: populate this once we sign the releases.
+			'signing_key' => 'E8AgVyLHxvnyXgB7sqge9Jp9Eo4eAQc+8gfC1KU90iI=',
 		];
 
 		return $plugins;

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.2 (2026-09-11)
+
+- OAuth Pilot updates, and the Update Pilot plugin installed from the "Install" prompt, are now verified against the WP Elevator signing key. An update or install with a missing or invalid signature is refused.
+- Fixed the Update Pilot registration using a `file` key where Update Pilot reads `plugin`, so Update Pilot ignored its license and signing keys.
+
 ## 0.7.1 (2026-09-10)
 
 - Fixed client registration refusing an entire client id metadata document because it preferred `private_key_jwt`, which blocked ChatGPT. ChatGPT publishes `none` alongside that preference in `token_endpoint_auth_methods_supported` and then picks from the intersection with this server's advertised methods (MCP SEP-3149). Unsupported authentication methods are now dropped and `none` kept, as RFC 7591 allows, matching the grant-type handling added for Claude. A document left without `none` is still refused, and `private_key_jwt` is still not advertised or implemented.
