@@ -3,7 +3,7 @@
         'name' => 'wpelevator/oauth-pilot',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '9f8144adc3c6e67f07bc46f9bc7be4a1ef75056e',
+        'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'wpelevator/oauth-pilot' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '9f8144adc3c6e67f07bc46f9bc7be4a1ef75056e',
+            'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
